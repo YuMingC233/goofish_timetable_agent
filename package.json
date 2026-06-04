@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:zip": "vite build && cd dist && zip -r ../goofish-timetable-agent.zip .",
+    "build": "tsc --noEmit && vite build",
+    "build:zip": "tsc --noEmit && vite build && cd dist && zip -r ../goofish-timetable-agent.zip .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
