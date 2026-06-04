@@ -1,5 +1,5 @@
 import type { AppSettings, ScheduledTask, TimeSlot } from '../shared/types';
-import { BUFFER_MINUTES } from '../shared/prompts';
+import { BUFFER_MINUTES } from '../shared/constants';
 
 /**
  * Finds the earliest available time slot for a task of the given duration.

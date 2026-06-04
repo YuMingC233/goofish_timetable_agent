@@ -58,7 +58,7 @@ describe('createNotionPage', () => {
     expect(pageId).toBe('page-abc-123');
 
     // Verify the fetch call was made with correct body
-    const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     const body = JSON.parse(fetchCall[1].body);
 
     // Check parent

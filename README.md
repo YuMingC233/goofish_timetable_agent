@@ -1,6 +1,6 @@
 # Goofish Timetable Agent
 
-A browser extension that brings AI-powered auto-scheduling and Notion calendar sync to the [闲鱼 (Xianyu)](https://www.goofish.com/) web workbench — so you can stop juggling conversations and start shipping on time.
+A browser extension that brings AI-powered auto-scheduling and Notion calendar sync to the [闲鱼 (Xianyu)](https://seller.goofish.com) web workbench — so you can stop juggling conversations and start shipping on time.
 
 ## Problem
 

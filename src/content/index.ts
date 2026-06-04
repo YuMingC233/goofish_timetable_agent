@@ -1,5 +1,7 @@
 import { scrapeChat } from './scraper';
 import type { BackgroundMessage, BackgroundResponse, ExtractedTask, ConflictResult, ScheduledTask } from '../shared/types';
+import { FloatingBall } from './floating-ball';
+import { PopupPanel } from './popup-panel';
 
 // Inject widget root into page
 function injectRoot(): HTMLElement {
@@ -65,6 +67,22 @@ declare global {
   }
 }
 
-// Initialize on load
+// Initialize UI on load
 const root = injectRoot();
-console.log('[Goofish Agent] Content script loaded, root mounted');
+
+const popup = new PopupPanel();
+popup.mount(root);
+
+const ball = new FloatingBall();
+ball.mount(root);
+ball.setBadge(0);
+
+ball.onBallClick(() => {
+  handleFloatingBallClick();
+});
+
+document.addEventListener('goofish:reanalyze', () => {
+  handleFloatingBallClick();
+});
+
+console.log('[Goofish Agent] Content script initialized — floating ball + popup panel ready');
