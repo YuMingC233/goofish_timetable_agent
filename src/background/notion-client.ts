@@ -26,6 +26,51 @@ export async function createNotionPage(
     throw new Error('Notion token not configured. Please set it in the extension popup.');
   }
 
+  // Build properties object, omitting null/undefined optional fields
+  const priceNum = typeof task.price === 'number' && !Number.isNaN(task.price) ? task.price : null;
+  const props: Record<string, unknown> = {
+    [PROP.TASK_NAME]: {
+      title: [{ text: { content: `[${task.buyerName}] - ${task.requirement}` } }],
+    },
+    [PROP.BUYER]: {
+      rich_text: [{ text: { content: task.buyerName } }],
+    },
+    [PROP.REQUIREMENT]: {
+      rich_text: [{ text: { content: task.requirement } }],
+    },
+    [PROP.URGENCY]: {
+      select: { name: URGENCY_LABELS[task.urgency] },
+    },
+    [PROP.EST_HOURS]: {
+      number: task.estimatedHours,
+    },
+    [PROP.DATE]: {
+      date: { start: task.date },
+    },
+    [PROP.START_TIME]: {
+      date: { start: task.scheduledStart, time_zone: 'Asia/Shanghai' },
+    },
+    [PROP.END_TIME]: {
+      date: { start: task.scheduledEnd, time_zone: 'Asia/Shanghai' },
+    },
+    [PROP.STATUS]: {
+      status: { name: STATUS_LABELS[task.status] },
+    },
+    [PROP.CHAT_LINK]: {
+      url: task.chatUrl,
+    },
+    [PROP.NOTES]: {
+      rich_text: task.specialNotes
+        ? [{ text: { content: task.specialNotes } }]
+        : [],
+    },
+  };
+
+  // Only include Price if it's a valid number
+  if (priceNum !== null) {
+    props[PROP.PRICE] = { number: priceNum };
+  }
+
   const response = await fetch(`${URLS.NOTION_API_BASE}/pages`, {
     method: 'POST',
     headers: {
@@ -35,51 +80,16 @@ export async function createNotionPage(
     },
     body: JSON.stringify({
       parent: { database_id: databaseId },
-      properties: {
-        [PROP.TASK_NAME]: {
-          title: [{ text: { content: `[${task.buyerName}] - ${task.requirement}` } }],
-        },
-        [PROP.BUYER]: {
-          rich_text: [{ text: { content: task.buyerName } }],
-        },
-        [PROP.REQUIREMENT]: {
-          rich_text: [{ text: { content: task.requirement } }],
-        },
-        [PROP.URGENCY]: {
-          select: { name: URGENCY_LABELS[task.urgency] },
-        },
-        [PROP.PRICE]: {
-          number: task.price ?? undefined,
-        },
-        [PROP.EST_HOURS]: {
-          number: task.estimatedHours,
-        },
-        [PROP.DATE]: {
-          date: { start: task.date },
-        },
-        [PROP.START_TIME]: {
-          date: { start: task.scheduledStart, time_zone: 'Asia/Shanghai' },
-        },
-        [PROP.END_TIME]: {
-          date: { start: task.scheduledEnd, time_zone: 'Asia/Shanghai' },
-        },
-        [PROP.STATUS]: {
-          select: { name: STATUS_LABELS[task.status] },
-        },
-        [PROP.CHAT_LINK]: {
-          url: task.chatUrl,
-        },
-        [PROP.NOTES]: {
-          rich_text: task.specialNotes
-            ? [{ text: { content: task.specialNotes } }]
-            : [],
-        },
-      },
+      properties: props,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Notion API error: ${response.status} ${response.statusText}`);
+    let errorBody = '';
+    try { errorBody = await response.text(); } catch { /* ignore */ }
+    throw new Error(
+      `Notion API error ${response.status}: ${response.statusText}${errorBody ? ' — ' + errorBody.slice(0, 500) : ''}`,
+    );
   }
 
   const data = await response.json();
