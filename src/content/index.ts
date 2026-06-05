@@ -1,5 +1,6 @@
 import { scrapeChat } from './scraper';
 import type { BackgroundMessage, BackgroundResponse, ExtractedTask, ConflictResult, ScheduledTask } from '../shared/types';
+import { formatChatForAI } from '../shared/prompts';
 import { FloatingBall } from './floating-ball';
 import { PopupPanel } from './popup-panel';
 
@@ -38,9 +39,11 @@ async function handleFloatingBallClick(): Promise<void> {
     return;
   }
 
-  const chatText = conversation.messages
-    .map((m) => `${m.sender === 'buyer' ? 'Buyer' : 'Seller'}: ${m.content}`)
-    .join('\n');
+  // Show loading state immediately
+  document.dispatchEvent(new CustomEvent('goofish:analyzing'));
+
+  // Format with timestamps and sender names for AI
+  const chatText = formatChatForAI(conversation);
 
   const response = await sendMessage<ExtractedTask>('EXTRACT_TASK', {
     chatMessages: chatText,
@@ -83,11 +86,17 @@ ball.mount(root);
 ball.setBadge(0);
 
 ball.onBallClick(() => {
-  handleFloatingBallClick();
+  ball.setLoading(true);
+  handleFloatingBallClick().finally(() => {
+    ball.setLoading(false);
+  });
 });
 
 document.addEventListener('goofish:reanalyze', () => {
-  handleFloatingBallClick();
+  ball.setLoading(true);
+  handleFloatingBallClick().finally(() => {
+    ball.setLoading(false);
+  });
 });
 
 console.log('[Goofish Agent] Content script initialized — floating ball + popup panel ready');

@@ -106,6 +106,7 @@ export interface ConflictResult {
 
 export interface ChatMessage {
   readonly sender: 'buyer' | 'seller' | 'system';
+  readonly senderName: string;
   readonly content: string;
   readonly timestamp: string;
 }

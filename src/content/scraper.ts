@@ -48,7 +48,8 @@ function extractMessages(): ChatMessage[] {
         const content = contentSpan?.textContent?.trim() || textWrapper.textContent?.trim() || '';
         if (content) {
           const sender = detectSender(node);
-          messages.push({ sender, content, timestamp: lastTimestamp });
+          const senderName = extractSenderName(node);
+          messages.push({ sender, senderName, content, timestamp: lastTimestamp });
         }
       }
     }
@@ -62,6 +63,11 @@ function extractMessages(): ChatMessage[] {
 function isDateSeparator(el: Element): boolean {
   if (el.tagName === 'LI') return false;
   return el.matches(SELECTORS.DATE_SEPARATOR) || el.matches('[style*="text-align: center"]');
+}
+
+function extractSenderName(element: Element): string {
+  const nameEl = element.querySelector(SELECTORS.SENDER_NAME);
+  return nameEl?.textContent?.trim() || '';
 }
 
 function detectSender(element: Element): ChatMessage['sender'] {

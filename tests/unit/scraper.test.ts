@@ -137,19 +137,31 @@ describe('scrapeChat', () => {
     const result = scrapeChat();
     expect(result.messages[0]).toEqual({
       sender: 'buyer',
+      senderName: 'Se7eN丶丶',
       content: '这个能做吗？周五前要',
       timestamp: '06-03 21:50',
     });
     expect(result.messages[1]).toEqual({
       sender: 'seller',
+      senderName: '写程序高手Connor',
       content: '可以，加急加50',
       timestamp: '06-03 21:50',
     });
     expect(result.messages[2]).toEqual({
       sender: 'buyer',
+      senderName: 'Se7eN丶丶',
       content: 'OK 拍了',
       timestamp: '昨天 10:05',
     });
+  });
+
+  it('extracts per-message sender name from DOM', () => {
+    setupChatDOM();
+    const result = scrapeChat();
+    // First message: buyer
+    expect(result.messages[0]!.senderName).toBe('Se7eN丶丶');
+    // Second message: seller (the logged-in user)
+    expect(result.messages[1]!.senderName).toBe('写程序高手Connor');
   });
 
   it('extracts chat URL', () => {

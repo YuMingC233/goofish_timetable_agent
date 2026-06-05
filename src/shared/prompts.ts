@@ -1,3 +1,14 @@
+import type { ScrapedConversation } from './types';
+
+export function formatChatForAI(conversation: ScrapedConversation): string {
+  const header = `买家: ${conversation.buyerName || 'Unknown'}`;
+  const messages = conversation.messages.map((m) => {
+    const name = m.senderName || (m.sender === 'buyer' ? 'Buyer' : 'Seller');
+    return `[${m.timestamp}] ${name}: ${m.content}`;
+  }).join('\n');
+  return `${header}\n---\n${messages}`;
+}
+
 export function buildPrompt(chatMessages: string): string {
   return `你是一名排期助手。根据以下闲鱼聊天记录，提取结构化信息。
 
