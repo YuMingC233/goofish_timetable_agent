@@ -52,6 +52,10 @@ export class FloatingBall {
         .ball:hover {
           transform: scale(1.1);
         }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
         #badge {
           position: absolute;
           top: -4px;
@@ -96,6 +100,20 @@ export class FloatingBall {
       this.badgeEl.classList.add('visible');
     } else {
       this.badgeEl.classList.remove('visible');
+    }
+  }
+
+  setLoading(loading: boolean): void {
+    const ball = this.shadow.querySelector('.ball') as HTMLElement | null;
+    if (!ball) return;
+    if (loading) {
+      ball.style.opacity = '0.6';
+      ball.style.pointerEvents = 'none';
+      ball.style.animation = 'pulse 1.5s ease-in-out infinite';
+    } else {
+      ball.style.opacity = '1';
+      ball.style.pointerEvents = 'auto';
+      ball.style.animation = '';
     }
   }
 

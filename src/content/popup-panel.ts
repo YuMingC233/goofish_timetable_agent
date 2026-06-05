@@ -7,6 +7,13 @@ export class PopupPanel {
   private visible = false;
   private pendingTask: (ExtractedTask & { chatUrl: string }) | null = null;
 
+  // ── Drag state ──
+  private isDragging = false;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private panelStartX = 0;
+  private panelStartY = 0;
+
   constructor() {
     this.host = document.createElement('div');
     this.host.id = 'goofish-popup-host';
@@ -28,6 +35,15 @@ export class PopupPanel {
       this.renderSettings(error);
       this.show();
     }) as EventListener);
+
+    // Listen for analyzing start — show loading state
+    document.addEventListener('goofish:analyzing', () => {
+      this.renderLoading();
+      this.show();
+    });
+
+    // Drag-to-move via header handle
+    this.setupDragHandlers();
   }
 
   show(): void {
@@ -47,6 +63,70 @@ export class PopupPanel {
 
   mount(parent: HTMLElement): void {
     parent.appendChild(this.host);
+    this.restorePosition();
+  }
+
+  // ── Drag ──
+
+  private setupDragHandlers(): void {
+    const header = this.shadow.querySelector('.header') as HTMLElement | null;
+    if (!header) return;
+
+    header.addEventListener('mousedown', this.onDragStart);
+    document.addEventListener('mousemove', this.onDragMove);
+    document.addEventListener('mouseup', this.onDragEnd);
+  }
+
+  private onDragStart = (e: MouseEvent): void => {
+    // Don't start drag on the close button
+    if ((e.target as HTMLElement).closest('#close-btn')) return;
+
+    this.isDragging = true;
+    this.dragStartX = e.clientX;
+    this.dragStartY = e.clientY;
+    const rect = this.host.getBoundingClientRect();
+    this.panelStartX = rect.left;
+    this.panelStartY = rect.top;
+
+    // Switch from bottom/right to left/top positioning
+    this.host.style.right = 'auto';
+    this.host.style.bottom = 'auto';
+    this.host.style.left = `${rect.left}px`;
+    this.host.style.top = `${rect.top}px`;
+  };
+
+  private onDragMove = (e: MouseEvent): void => {
+    if (!this.isDragging) return;
+    const dx = e.clientX - this.dragStartX;
+    const dy = e.clientY - this.dragStartY;
+    this.host.style.left = `${this.panelStartX + dx}px`;
+    this.host.style.top = `${this.panelStartY + dy}px`;
+  };
+
+  private onDragEnd = (): void => {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    this.savePosition();
+  };
+
+  private savePosition(): void {
+    const rect = this.host.getBoundingClientRect();
+    sessionStorage.setItem(
+      'goofish-panel-pos',
+      JSON.stringify({ left: rect.left, top: rect.top }),
+    );
+  }
+
+  private restorePosition(): void {
+    const saved = sessionStorage.getItem('goofish-panel-pos');
+    if (!saved) return;
+    try {
+      const { left, top } = JSON.parse(saved);
+      this.host.style.right = 'auto';
+      this.host.style.bottom = 'auto';
+      this.host.style.left = `${left}px`;
+      this.host.style.top = `${top}px`;
+    } catch { /* ignore */ }
   }
 
   // ── renderShell ──
@@ -76,7 +156,10 @@ export class PopupPanel {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        cursor: grab;
+        user-select: none;
       }
+      .header:active { cursor: grabbing; }
       .header h3 { margin: 0; font-size: 16px; }
       .close-btn {
         background: none; border: none; color: #6c7086; font-size: 20px; cursor: pointer;
@@ -129,6 +212,21 @@ export class PopupPanel {
       }
       .status-msg.success { background: #1a3827; color: #a6e3a1; }
       .status-msg.error { background: #3c1618; color: #f38ba8; }
+      .loading-spinner {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 40px 16px; gap: 16px;
+      }
+      .spinner {
+        width: 36px; height: 36px;
+        border: 3px solid #313244;
+        border-top: 3px solid #cba6f7;
+        border-radius: 50%;
+        animation: goofish-spin 0.8s linear infinite;
+      }
+      @keyframes goofish-spin {
+        to { transform: rotate(360deg); }
+      }
+      .loading-text { color: #a6adc8; font-size: 13px; }
     `;
 
     this.shadow.appendChild(style);
@@ -148,6 +246,19 @@ export class PopupPanel {
     this.shadow.appendChild(shell);
 
     this.shadow.getElementById('close-btn')?.addEventListener('click', () => this.hide());
+  }
+
+  // ── renderLoading ──
+
+  renderLoading(): void {
+    const body = this.shadow.getElementById('panel-body');
+    if (!body) return;
+    body.innerHTML = `
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <div class="loading-text">Analyzing conversation with AI...</div>
+      </div>
+    `;
   }
 
   // ── renderTask ──
