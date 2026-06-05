@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createNotionPage } from '../../src/background/notion-client';
 import type { ScheduledTask } from '../../src/shared/types';
+import { NOTION_PROPERTY_KEYS } from '../../src/shared/constants';
+
+const P = NOTION_PROPERTY_KEYS;
 
 // Mock chrome.storage.local
 vi.stubGlobal('chrome', {
@@ -64,18 +67,18 @@ describe('createNotionPage', () => {
     // Check parent
     expect(body.parent.database_id).toBe('db-test-123');
 
-    // Check properties mapping
+    // Check properties mapping (all column names are Chinese via NOTION_PROPERTY_KEYS)
     const props = body.properties;
-    expect(props['Task Name'].title[0].text.content).toContain('张三');
-    expect(props['Task Name'].title[0].text.content).toContain('Logo design');
-    expect(props['Buyer'].rich_text[0].text.content).toBe('张三');
-    expect(props['Requirement'].rich_text[0].text.content).toBe('Logo design');
-    expect(props['Urgency'].select.name).toBe('🔴 High');
-    expect(props['Price (¥)'].number).toBe(350);
-    expect(props['Est. Hours'].number).toBe(4);
-    expect(props['Date'].date.start).toBe('2026-06-05');
-    expect(props['Status'].select.name).toBe('📋 Scheduled');
-    expect(props['Chat Link'].url).toBe('https://seller.goofish.com/chat/123');
+    expect(props[P.TASK_NAME].title[0].text.content).toContain('张三');
+    expect(props[P.TASK_NAME].title[0].text.content).toContain('Logo design');
+    expect(props[P.BUYER].rich_text[0].text.content).toBe('张三');
+    expect(props[P.REQUIREMENT].rich_text[0].text.content).toBe('Logo design');
+    expect(props[P.URGENCY].select.name).toBe('🔴 High');
+    expect(props[P.PRICE].number).toBe(350);
+    expect(props[P.EST_HOURS].number).toBe(4);
+    expect(props[P.DATE].date.start).toBe('2026-06-05');
+    expect(props[P.STATUS].select.name).toBe('📋 Scheduled');
+    expect(props[P.CHAT_LINK].url).toBe('https://seller.goofish.com/chat/123');
   });
 
   it('throws error on Notion API failure', async () => {

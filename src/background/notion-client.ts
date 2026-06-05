@@ -1,6 +1,8 @@
 import type { ScheduledTask, TaskStatus, Urgency } from '../shared/types';
 import { getSettings } from './storage-manager';
-import { URLS, NOTION_API_VERSION } from '../shared/constants';
+import { URLS, NOTION_API_VERSION, NOTION_PROPERTY_KEYS } from '../shared/constants';
+
+const PROP = NOTION_PROPERTY_KEYS;
 
 const URGENCY_LABELS: Record<Urgency, string> = {
   high: '🔴 High',
@@ -34,40 +36,40 @@ export async function createNotionPage(
     body: JSON.stringify({
       parent: { database_id: databaseId },
       properties: {
-        'Task Name': {
+        [PROP.TASK_NAME]: {
           title: [{ text: { content: `[${task.buyerName}] - ${task.requirement}` } }],
         },
-        Buyer: {
+        [PROP.BUYER]: {
           rich_text: [{ text: { content: task.buyerName } }],
         },
-        Requirement: {
+        [PROP.REQUIREMENT]: {
           rich_text: [{ text: { content: task.requirement } }],
         },
-        Urgency: {
+        [PROP.URGENCY]: {
           select: { name: URGENCY_LABELS[task.urgency] },
         },
-        'Price (¥)': {
+        [PROP.PRICE]: {
           number: task.price ?? undefined,
         },
-        'Est. Hours': {
+        [PROP.EST_HOURS]: {
           number: task.estimatedHours,
         },
-        Date: {
+        [PROP.DATE]: {
           date: { start: task.date },
         },
-        'Start Time': {
+        [PROP.START_TIME]: {
           date: { start: task.scheduledStart, time_zone: 'Asia/Shanghai' },
         },
-        'End Time': {
+        [PROP.END_TIME]: {
           date: { start: task.scheduledEnd, time_zone: 'Asia/Shanghai' },
         },
-        Status: {
+        [PROP.STATUS]: {
           select: { name: STATUS_LABELS[task.status] },
         },
-        'Chat Link': {
+        [PROP.CHAT_LINK]: {
           url: task.chatUrl,
         },
-        Notes: {
+        [PROP.NOTES]: {
           rich_text: task.specialNotes
             ? [{ text: { content: task.specialNotes } }]
             : [],
