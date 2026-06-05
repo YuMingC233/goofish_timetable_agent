@@ -26,7 +26,12 @@ function makeTask(overrides: Partial<ScheduledTask> = {}): ScheduledTask {
 }
 
 function makeSettings(overrides: Partial<AppSettings> = {}): AppSettings {
-  return { ...DEFAULT_SETTINGS, ...overrides };
+  return {
+    ...DEFAULT_SETTINGS,
+    defaultWorkStart: '09:00',
+    defaultWorkEnd: '18:00',
+    ...overrides,
+  };
 }
 
 describe('findOptimalSlot', () => {

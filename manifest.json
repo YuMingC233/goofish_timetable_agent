@@ -26,6 +26,9 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://api.openai.com/*",
-    "https://api.notion.com/*"
+    "https://api.notion.com/*",
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ]
 }

@@ -107,6 +107,66 @@ describe('extractTask', () => {
       statusText: 'Unauthorized',
     } as Response);
 
-    await expect(extractTask('test')).rejects.toThrow('AI API error: 401');
+    await expect(extractTask('test')).rejects.toThrow(/AI API error 401:/);
+  });
+
+  it('uses custom openaiBaseUrl from settings when configured', async () => {
+    const customBaseUrl = 'https://my-proxy.example.com/v1';
+    vi.stubGlobal('chrome', {
+      storage: {
+        local: {
+          get: vi.fn(() =>
+            Promise.resolve({
+              goofish_settings: {
+                openaiApiKey: 'sk-test-key',
+                aiModel: 'gpt-4o-mini',
+                aiProvider: 'openai',
+                openaiBaseUrl: customBaseUrl,
+              },
+            }),
+          ),
+        },
+      },
+    });
+
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(VALID_RESPONSE),
+    } as Response);
+
+    await extractTask('test conversation');
+
+    expect(fetchSpy).toHaveBeenCalled();
+    const fetchUrl = fetchSpy.mock.calls[0]![0] as string;
+    expect(fetchUrl).toBe(`${customBaseUrl}/chat/completions`);
+  });
+
+  it('uses default OpenAI URL when openaiBaseUrl is not configured', async () => {
+    vi.stubGlobal('chrome', {
+      storage: {
+        local: {
+          get: vi.fn(() =>
+            Promise.resolve({
+              goofish_settings: {
+                openaiApiKey: 'sk-test-key',
+                aiModel: 'gpt-4o-mini',
+                aiProvider: 'openai',
+              },
+            }),
+          ),
+        },
+      },
+    });
+
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(VALID_RESPONSE),
+    } as Response);
+
+    await extractTask('test conversation');
+
+    expect(fetchSpy).toHaveBeenCalled();
+    const fetchUrl = fetchSpy.mock.calls[0]![0] as string;
+    expect(fetchUrl).toBe('https://api.openai.com/v1/chat/completions');
   });
 });

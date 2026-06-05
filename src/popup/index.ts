@@ -2,6 +2,8 @@ import type { AppSettings, BackgroundResponse } from '../shared/types';
 
 const form = document.getElementById('settings-form') as HTMLFormElement;
 const openaiKeyInput = document.getElementById('openai-key') as HTMLInputElement;
+const openaiBaseUrlInput = document.getElementById('openai-base-url') as HTMLInputElement;
+const aiModelInput = document.getElementById('ai-model') as HTMLInputElement;
 const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement;
 const notionDbIdInput = document.getElementById('notion-db-id') as HTMLInputElement;
 const statusEl = document.getElementById('status') as HTMLDivElement;
@@ -12,6 +14,8 @@ async function loadSettings(): Promise<void> {
     if (bg.success && bg.data) {
       const settings = bg.data as AppSettings;
       openaiKeyInput.value = settings.openaiApiKey || '';
+      openaiBaseUrlInput.value = settings.openaiBaseUrl || '';
+      aiModelInput.value = settings.aiModel || '';
       notionTokenInput.value = settings.notionToken || '';
       notionDbIdInput.value = settings.notionDatabaseId || '';
     }
@@ -36,6 +40,8 @@ form.addEventListener('submit', async (e: Event) => {
       type: 'SAVE_SETTINGS',
       payload: {
         openaiApiKey: openaiKeyInput.value.trim(),
+        openaiBaseUrl: openaiBaseUrlInput.value.trim(),
+        aiModel: aiModelInput.value.trim(),
         notionToken: notionTokenInput.value.trim(),
         notionDatabaseId: notionDbIdInput.value.trim(),
       },

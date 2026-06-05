@@ -1,7 +1,7 @@
 import type { ExtractedTask } from '../shared/types';
 import { buildPrompt } from '../shared/prompts';
 import { getSettings } from './storage-manager';
-import { URLS, AI_TIMEOUT_MS, AI_MAX_RETRIES } from '../shared/constants';
+import { DEFAULT_OPENAI_BASE_URL, AI_TIMEOUT_MS, AI_MAX_RETRIES } from '../shared/constants';
 
 export async function extractTask(chatMessages: string): Promise<ExtractedTask> {
   const settings = await getSettings();
@@ -9,6 +9,9 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
     throw new Error('OpenAI API key not configured. Please set it in the extension popup.');
   }
 
+  // Normalize: strip trailing slashes, then append /chat/completions
+  const baseUrl = (settings.openaiBaseUrl || DEFAULT_OPENAI_BASE_URL).replace(/\/+$/, '');
+  const apiUrl = `${baseUrl}/chat/completions`;
   const prompt = buildPrompt(chatMessages);
 
   let lastError: Error | null = null;
@@ -17,18 +20,23 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
-      const response = await fetch(URLS.OPENAI_CHAT_COMPLETIONS, {
+      const body = {
+        model: settings.aiModel,
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant. Always reply with valid JSON.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      };
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${settings.openaiApiKey}`,
         },
-        body: JSON.stringify({
-          model: settings.aiModel,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
-          max_tokens: 1000,
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 
@@ -40,7 +48,12 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
           await sleep(1000 * Math.pow(2, attempt));
           continue;
         }
-        throw new Error(`AI API error: ${response.status} ${response.statusText}`);
+        // Include response body in error for easier debugging
+        let errorBody = '';
+        try { errorBody = await response.text(); } catch { /* ignore */ }
+        throw new Error(
+          `AI API error ${response.status}: ${response.statusText}${errorBody ? ' — ' + errorBody.slice(0, 300) : ''}`,
+        );
       }
 
       const data = await response.json();

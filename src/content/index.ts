@@ -54,6 +54,11 @@ async function handleFloatingBallClick(): Promise<void> {
     document.dispatchEvent(new CustomEvent('goofish:taskExtracted'));
   } else {
     console.error('[Goofish Agent] Extraction failed:', response.error);
+    // Show the error and inline settings in the popup panel
+    const errorMsg = response.error || 'Unknown error';
+    document.dispatchEvent(
+      new CustomEvent('goofish:extractionFailed', { detail: { error: errorMsg } }),
+    );
   }
 }
 

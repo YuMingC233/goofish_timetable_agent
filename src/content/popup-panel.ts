@@ -1,4 +1,4 @@
-import type { ExtractedTask, ScheduledTask, ConflictResult, TimeSlot } from '../shared/types';
+import type { ExtractedTask, ScheduledTask, ConflictResult } from '../shared/types';
 import { sendMessage } from './index';
 
 export class PopupPanel {
@@ -21,6 +21,13 @@ export class PopupPanel {
         this.show();
       }
     });
+
+    // Listen for extraction failure events (e.g. missing API key)
+    document.addEventListener('goofish:extractionFailed', ((e: CustomEvent) => {
+      const error = e.detail?.error || 'Unknown error';
+      this.renderSettings(error);
+      this.show();
+    }) as EventListener);
   }
 
   show(): void {
@@ -41,6 +48,8 @@ export class PopupPanel {
   mount(parent: HTMLElement): void {
     parent.appendChild(this.host);
   }
+
+  // ── renderShell ──
 
   private renderShell(): void {
     const style = document.createElement('style');
@@ -89,8 +98,37 @@ export class PopupPanel {
       }
       .btn-primary { background: #cba6f7; color: #1e1e2e; }
       .btn-secondary { background: #313244; color: #cdd6f4; }
+      .btn-full { width: 100%; margin-top: 12px; }
       .actions { margin-top: 16px; display: flex; }
       .empty-state { text-align: center; padding: 32px 16px; color: #6c7086; }
+      .error-banner {
+        background: #3c1618; border: 1px solid #f38ba8; border-radius: 8px;
+        padding: 10px 12px; margin-bottom: 16px; color: #f38ba8; font-size: 13px;
+      }
+      .settings-input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #313244;
+        border-radius: 8px;
+        background: #11111b;
+        color: #cdd6f4;
+        font-size: 13px;
+        outline: none;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+      }
+      .settings-input:focus { border-color: #cba6f7; }
+      .settings-label {
+        display: block;
+        font-size: 12px;
+        color: #a6adc8;
+        margin-bottom: 4px;
+      }
+      .status-msg {
+        padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px;
+      }
+      .status-msg.success { background: #1a3827; color: #a6e3a1; }
+      .status-msg.error { background: #3c1618; color: #f38ba8; }
     `;
 
     this.shadow.appendChild(style);
@@ -111,6 +149,8 @@ export class PopupPanel {
 
     this.shadow.getElementById('close-btn')?.addEventListener('click', () => this.hide());
   }
+
+  // ── renderTask ──
 
   private renderTask(): void {
     if (!this.pendingTask) return;
@@ -163,6 +203,99 @@ export class PopupPanel {
       window.dispatchEvent(new Event('goofish:reanalyze'));
     });
   }
+
+  // ── renderSettings ──
+
+  private renderSettings(error: string): void {
+    const body = this.shadow.getElementById('panel-body');
+    if (!body) return;
+
+    body.innerHTML = `
+      <div class="error-banner">⚠️ ${escapeHtml(error)}</div>
+      <p style="font-size:13px;color:#a6adc8;margin-bottom:12px;">
+        Configure your API keys below, then click <strong>Re-analyze</strong>.
+      </p>
+
+      <label class="settings-label" for="settings-openai-key">OpenAI API Key</label>
+      <input class="settings-input" type="password" id="settings-openai-key" placeholder="sk-..." autocomplete="off" />
+
+      <label class="settings-label" for="settings-openai-base-url">OpenAI Base URL</label>
+      <input class="settings-input" type="text" id="settings-openai-base-url" placeholder="https://api.openai.com/v1" autocomplete="off" />
+
+      <label class="settings-label" for="settings-ai-model">AI Model</label>
+      <input class="settings-input" type="text" id="settings-ai-model" placeholder="gpt-4o-mini" autocomplete="off" />
+
+      <label class="settings-label" for="settings-notion-token">Notion Integration Token</label>
+      <input class="settings-input" type="password" id="settings-notion-token" placeholder="ntn-..." autocomplete="off" />
+
+      <label class="settings-label" for="settings-notion-db-id">Notion Database ID</label>
+      <input class="settings-input" type="text" id="settings-notion-db-id" placeholder="Your database ID" />
+
+      <div id="settings-status"></div>
+
+      <button class="btn btn-primary btn-full" id="settings-save-btn">💾 Save Settings</button>
+      <button class="btn btn-secondary btn-full" id="settings-reanalyze-btn" style="margin-top:8px;">🔄 Re-analyze</button>
+    `;
+
+    // Load current settings
+    this.loadSettingsIntoForm();
+
+    // Save handler
+    this.shadow.getElementById('settings-save-btn')?.addEventListener('click', () => this.handleSaveSettings());
+
+    // Re-analyze handler
+    this.shadow.getElementById('settings-reanalyze-btn')?.addEventListener('click', () => {
+      window.dispatchEvent(new Event('goofish:reanalyze'));
+    });
+  }
+
+  private async loadSettingsIntoForm(): Promise<void> {
+    try {
+      const res = await sendMessage<Record<string, string>>('GET_SETTINGS', null);
+      if (res.success && res.data) {
+        const s = res.data as Record<string, string>;
+        this.setInputValue('settings-openai-key', s.openaiApiKey || '');
+        this.setInputValue('settings-openai-base-url', s.openaiBaseUrl || '');
+        this.setInputValue('settings-ai-model', s.aiModel || '');
+        this.setInputValue('settings-notion-token', s.notionToken || '');
+        this.setInputValue('settings-notion-db-id', s.notionDatabaseId || '');
+      }
+    } catch {
+      // settings will remain empty
+    }
+  }
+
+  private setInputValue(id: string, value: string): void {
+    const el = this.shadow.getElementById(id) as HTMLInputElement | null;
+    if (el) el.value = value;
+  }
+
+  private getInputValue(id: string): string {
+    const el = this.shadow.getElementById(id) as HTMLInputElement | null;
+    return el?.value?.trim() || '';
+  }
+
+  private async handleSaveSettings(): Promise<void> {
+    const statusEl = this.shadow.getElementById('settings-status');
+    try {
+      const res = await sendMessage('SAVE_SETTINGS', {
+        openaiApiKey: this.getInputValue('settings-openai-key'),
+        openaiBaseUrl: this.getInputValue('settings-openai-base-url'),
+        aiModel: this.getInputValue('settings-ai-model'),
+        notionToken: this.getInputValue('settings-notion-token'),
+        notionDatabaseId: this.getInputValue('settings-notion-db-id'),
+      });
+      if (res.success) {
+        if (statusEl) statusEl.innerHTML = '<div class="status-msg success">✓ Settings saved! Click Re-analyze below.</div>';
+      } else {
+        if (statusEl) statusEl.innerHTML = `<div class="status-msg error">✗ ${escapeHtml(res.error || 'Save failed')}</div>`;
+      }
+    } catch (err) {
+      if (statusEl) statusEl.innerHTML = `<div class="status-msg error">✗ ${escapeHtml(String(err))}</div>`;
+    }
+  }
+
+  // ── handleExport ──
 
   private async handleExport(): Promise<void> {
     if (!this.pendingTask) return;
