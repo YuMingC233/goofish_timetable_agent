@@ -63,8 +63,6 @@ export const NOTION_PROPERTY_KEYS = {
   PRICE: '报价',
   EST_HOURS: '预估工时',
   DATE: '日期',
-  START_TIME: '开始时间',
-  END_TIME: '结束时间',
   STATUS: '状态',
   CHAT_LINK: '聊天链接',
   NOTES: '备注',
