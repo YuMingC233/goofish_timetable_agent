@@ -41,6 +41,7 @@ export interface ScheduledTask {
 
 export interface AppSettings {
   openaiApiKey: string;
+  openaiBaseUrl: string;
   notionToken: string;
   notionDatabaseId: string;
   aiProvider: AIProvider;
@@ -55,14 +56,15 @@ export type AppSettingsPartial = Partial<AppSettings>;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   openaiApiKey: '',
+  openaiBaseUrl: 'https://api.openai.com/v1',
   notionToken: '',
   notionDatabaseId: '',
   aiProvider: 'openai',
   aiModel: 'gpt-4o-mini',
-  defaultBasePrice: 300,
+  defaultBasePrice: 0,
   defaultBufferMinutes: 10,
-  defaultWorkStart: '09:00',
-  defaultWorkEnd: '18:00',
+  defaultWorkStart: '19:00',
+  defaultWorkEnd: '23:00',
 };
 
 // ── Message passing protocol ──
