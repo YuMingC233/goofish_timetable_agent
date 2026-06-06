@@ -92,6 +92,20 @@ ball.onBallClick(() => {
   });
 });
 
+ball.onGenerateClick(() => {
+  ball.setLoading(true);
+  handleFloatingBallClick().finally(() => {
+    ball.setLoading(false);
+  });
+});
+
+ball.onConfigClick(() => {
+  // Show the popup panel with settings form
+  document.dispatchEvent(
+    new CustomEvent('goofish:extractionFailed', { detail: { error: 'Environment Configuration' } }),
+  );
+});
+
 document.addEventListener('goofish:reanalyze', () => {
   ball.setLoading(true);
   handleFloatingBallClick().finally(() => {

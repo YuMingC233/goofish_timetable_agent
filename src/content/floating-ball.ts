@@ -8,6 +8,9 @@ export class FloatingBall {
   private ballStartX = 0;
   private ballStartY = 0;
   private onClickCallback: (() => void) | null = null;
+  private contextMenuEl: HTMLDivElement;
+  private onGenerateCallback: (() => void) | null = null;
+  private onConfigCallback: (() => void) | null = null;
 
   constructor() {
     // Create host element
@@ -36,11 +39,11 @@ export class FloatingBall {
           cursor: grabbing;
         }
         .ball {
-          width: 48px;
-          height: 48px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          background: #D4352B;
+          box-shadow: 0 2px 12px rgba(212, 53, 43, 0.25);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -50,7 +53,7 @@ export class FloatingBall {
           position: relative;
         }
         .ball:hover {
-          transform: scale(1.1);
+          transform: scale(1.08);
         }
         @keyframes pulse {
           0%, 100% { opacity: 0.6; }
@@ -60,7 +63,7 @@ export class FloatingBall {
           position: absolute;
           top: -4px;
           right: -4px;
-          background: #ef4444;
+          background: #D4352B;
           color: white;
           font-size: 11px;
           font-weight: bold;
@@ -76,6 +79,11 @@ export class FloatingBall {
         #badge.visible {
           display: flex;
         }
+        #ctx-generate:hover,
+        #ctx-settings:hover {
+          background: #F5F0E8;
+          color: #D4352B;
+        }
       </style>
       <div class="ball" title="Goofish Timetable Agent">
         🎣
@@ -87,11 +95,49 @@ export class FloatingBall {
     const badgeInShadow = this.shadow.getElementById('badge') as HTMLSpanElement;
     if (badgeInShadow) this.badgeEl = badgeInShadow;
 
+    // Build context menu
+    this.contextMenuEl = document.createElement('div');
+    this.contextMenuEl.id = 'context-menu';
+    this.contextMenuEl.style.cssText =
+      'display:none;position:fixed;z-index:2147483648;background:#FFFFFF;border:1px solid #E8E0D5;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:4px 0;min-width:160px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;';
+
+    const generateBtn = document.createElement('button');
+    generateBtn.id = 'ctx-generate';
+    generateBtn.style.cssText =
+      'display:block;width:100%;padding:8px 14px;border:none;background:none;cursor:pointer;text-align:left;color:#1C1917;font-size:13px;';
+    generateBtn.textContent = '🎣 开始生成';
+
+    const settingsBtn = document.createElement('button');
+    settingsBtn.id = 'ctx-settings';
+    settingsBtn.style.cssText =
+      'display:block;width:100%;padding:8px 14px;border:none;background:none;cursor:pointer;text-align:left;color:#1C1917;font-size:13px;';
+    settingsBtn.textContent = '⚙️ 环境配置';
+
+    // Menu button click handlers
+    generateBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.contextMenuEl.style.display = 'none';
+      this.onGenerateCallback?.();
+    });
+
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.contextMenuEl.style.display = 'none';
+      this.onConfigCallback?.();
+    });
+
+    this.contextMenuEl.appendChild(generateBtn);
+    this.contextMenuEl.appendChild(settingsBtn);
+    this.shadow.appendChild(this.contextMenuEl);
+
     // Event listeners
     this.el.addEventListener('mousedown', this.onMouseDown);
     document.addEventListener('mousemove', this.onMouseMove);
     document.addEventListener('mouseup', this.onMouseUp);
     this.el.addEventListener('click', this.onClick);
+    this.el.addEventListener('contextmenu', this.onContextMenu);
+    document.addEventListener('click', this.onDocumentClick);
+    document.addEventListener('keydown', this.onKeyDown);
   }
 
   setBadge(count: number): void {
@@ -121,6 +167,14 @@ export class FloatingBall {
     this.onClickCallback = callback;
   }
 
+  onGenerateClick(callback: () => void): void {
+    this.onGenerateCallback = callback;
+  }
+
+  onConfigClick(callback: () => void): void {
+    this.onConfigCallback = callback;
+  }
+
   mount(parent: HTMLElement): void {
     parent.appendChild(this.el);
     // Restore saved position
@@ -143,6 +197,41 @@ export class FloatingBall {
       JSON.stringify({ x: rect.left, y: rect.top }),
     );
   }
+
+  private onContextMenu = (e: MouseEvent): void => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const menuWidth = 160;
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // Flip to left if near right edge
+    if (x + menuWidth > window.innerWidth) {
+      x = e.clientX - menuWidth;
+    }
+
+    // Flip above if near bottom edge
+    // Estimate menu height ~ 80px (two buttons)
+    const estimatedMenuHeight = 80;
+    if (y + estimatedMenuHeight > window.innerHeight) {
+      y = e.clientY - estimatedMenuHeight;
+    }
+
+    this.contextMenuEl.style.left = `${x}px`;
+    this.contextMenuEl.style.top = `${y}px`;
+    this.contextMenuEl.style.display = 'block';
+  };
+
+  private onDocumentClick = (): void => {
+    this.contextMenuEl.style.display = 'none';
+  };
+
+  private onKeyDown = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape') {
+      this.contextMenuEl.style.display = 'none';
+    }
+  };
 
   private onMouseDown = (e: MouseEvent): void => {
     this.isDragging = true;

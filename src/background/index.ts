@@ -37,10 +37,13 @@ async function handleMessage(message: BackgroundMessage): Promise<BackgroundResp
       }
 
       case 'FIND_OPTIMAL_SLOT': {
-        const { durationHours } = message.payload as { durationHours: number };
+        const { durationHours, preferredDate } = message.payload as {
+          durationHours: number;
+          preferredDate?: string | null;
+        };
         const settings = await getSettings();
         const existingTasks = await getScheduledTasks();
-        const slot = findOptimalSlot(durationHours, existingTasks, settings);
+        const slot = findOptimalSlot(durationHours, existingTasks, settings, preferredDate ?? null);
         return {
           success: true,
           data: { start: slot.start.toISOString(), end: slot.end.toISOString() },

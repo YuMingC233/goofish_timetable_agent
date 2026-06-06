@@ -26,6 +26,7 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
           { role: 'system', content: 'You are a helpful assistant. Always reply with valid JSON.' },
           { role: 'user', content: prompt },
         ],
+        response_format: { type: 'json_object' },
         temperature: 0.3,
         max_tokens: 2000,
       };

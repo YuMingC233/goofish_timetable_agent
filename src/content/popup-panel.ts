@@ -140,10 +140,11 @@ export class PopupPanel {
         right: 84px;
         width: 380px;
         max-height: 80vh;
-        background: #1e1e2e;
-        color: #cdd6f4;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        background: #FFF9F0;
+        color: #1C1917;
+        border: 1px solid #E8E0D5;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
         z-index: 2147483646;
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 14px;
@@ -151,82 +152,103 @@ export class PopupPanel {
         display: none;
       }
       .header {
-        padding: 16px;
-        border-bottom: 1px solid #313244;
+        padding: 14px 16px;
+        border-top: 3px solid #D4352B;
+        border-bottom: 1px solid #E8E0D5;
+        background: #FFFFFF;
         display: flex;
         justify-content: space-between;
         align-items: center;
         cursor: grab;
         user-select: none;
+        border-radius: 12px 12px 0 0;
       }
       .header:active { cursor: grabbing; }
-      .header h3 { margin: 0; font-size: 16px; }
+      .header h3 { margin: 0; font-size: 15px; font-weight: 600; color: #1C1917; }
       .close-btn {
-        background: none; border: none; color: #6c7086; font-size: 20px; cursor: pointer;
+        background: none; border: none; color: #8B8682; font-size: 20px; cursor: pointer;
       }
-      .body { padding: 16px; }
+      .close-btn:hover { color: #D4352B; }
+      .body { padding: 16px; background: #FFF9F0; }
       .field { margin-bottom: 12px; }
-      .field-label { font-size: 12px; color: #6c7086; margin-bottom: 4px; text-transform: uppercase; }
-      .field-value { font-size: 14px; }
-      .urgency-high { color: #f38ba8; }
-      .urgency-medium { color: #f9e2af; }
-      .urgency-low { color: #a6e3a1; }
+      .field-label { font-size: 11px; color: #8B8682; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+      .field-value { font-size: 14px; color: #1C1917; }
+      .urgency-high { color: #D4352B; font-weight: 600; }
+      .urgency-medium { color: #D97706; font-weight: 600; }
+      .urgency-low { color: #5B8C5A; }
       .conflict-banner {
-        background: #3c1618; border: 1px solid #f38ba8; border-radius: 8px;
-        padding: 12px; margin-top: 12px; color: #f38ba8;
+        background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px;
+        padding: 12px; margin-top: 12px; color: #D4352B;
       }
       .btn {
-        padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;
-        font-size: 14px; font-weight: 600; margin-right: 8px;
+        padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
+        font-size: 14px; font-weight: 600; margin-right: 8px; transition: background 0.15s;
       }
-      .btn-primary { background: #cba6f7; color: #1e1e2e; }
-      .btn-secondary { background: #313244; color: #cdd6f4; }
+      .btn-primary { background: #D4352B; color: #FFFFFF; }
+      .btn-primary:hover { background: #B8201B; }
+      .btn-secondary { background: #F5F0E8; color: #1C1917; border: 1px solid #E8E0D5; }
+      .btn-secondary:hover { background: #EDE5D8; }
       .btn-full { width: 100%; margin-top: 12px; }
       .actions { margin-top: 16px; display: flex; }
-      .empty-state { text-align: center; padding: 32px 16px; color: #6c7086; }
+      .empty-state { text-align: center; padding: 32px 16px; color: #8B8682; }
       .error-banner {
-        background: #3c1618; border: 1px solid #f38ba8; border-radius: 8px;
-        padding: 10px 12px; margin-bottom: 16px; color: #f38ba8; font-size: 13px;
+        background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px;
+        padding: 10px 12px; margin-bottom: 16px; color: #D4352B; font-size: 13px;
       }
       .settings-input {
         width: 100%;
         padding: 8px 10px;
-        border: 1px solid #313244;
-        border-radius: 8px;
-        background: #11111b;
-        color: #cdd6f4;
+        border: 1px solid #E8E0D5;
+        border-radius: 6px;
+        background: #FFFFFF;
+        color: #1C1917;
         font-size: 13px;
         outline: none;
         margin-bottom: 10px;
         box-sizing: border-box;
+        transition: border-color 0.15s;
       }
-      .settings-input:focus { border-color: #cba6f7; }
+      .settings-input:focus { border-color: #D4352B; }
+      .day-select {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #E8E0D5;
+        border-radius: 6px;
+        background: #FFFFFF;
+        color: #1C1917;
+        font-size: 13px;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .day-select:focus { border-color: #D4352B; }
       .settings-label {
         display: block;
         font-size: 12px;
-        color: #a6adc8;
+        color: #5C5550;
         margin-bottom: 4px;
+        font-weight: 500;
       }
       .status-msg {
         padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px;
       }
-      .status-msg.success { background: #1a3827; color: #a6e3a1; }
-      .status-msg.error { background: #3c1618; color: #f38ba8; }
+      .status-msg.success { background: #F0F7F0; color: #5B8C5A; }
+      .status-msg.error { background: #FEF2F2; color: #D4352B; }
       .loading-spinner {
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         padding: 40px 16px; gap: 16px;
       }
       .spinner {
         width: 36px; height: 36px;
-        border: 3px solid #313244;
-        border-top: 3px solid #cba6f7;
+        border: 3px solid #E8E0D5;
+        border-top: 3px solid #D4352B;
         border-radius: 50%;
         animation: goofish-spin 0.8s linear infinite;
       }
       @keyframes goofish-spin {
         to { transform: rotate(360deg); }
       }
-      .loading-text { color: #a6adc8; font-size: 13px; }
+      .loading-text { color: #8B8682; font-size: 13px; }
     `;
 
     this.shadow.appendChild(style);
@@ -302,6 +324,16 @@ export class PopupPanel {
         <div class="field-label">Notes</div>
         <div class="field-value">${escapeHtml(t.specialNotes)}</div>
       </div>` : ''}
+      <div class="field">
+        <div class="field-label">Schedule Day</div>
+        <select id="schedule-day-select" class="day-select">
+          <option value="auto" selected>🤖 Auto (程序自动安排)</option>
+          <option value="today">📅 Today</option>
+          <option value="tomorrow">📅 Tomorrow</option>
+          <option value="custom">📅 Pick a date...</option>
+        </select>
+        <input type="date" id="schedule-day-input" class="settings-input" style="display:none; margin-top:8px;" />
+      </div>
       <div class="actions">
         <button class="btn btn-primary" id="export-btn">Export to Notion →</button>
         <button class="btn btn-secondary" id="reanalyze-btn">Re-analyze</button>
@@ -313,6 +345,16 @@ export class PopupPanel {
     this.shadow.getElementById('reanalyze-btn')?.addEventListener('click', () => {
       window.dispatchEvent(new Event('goofish:reanalyze'));
     });
+
+    // Wire day selector toggle
+    const daySelect = this.shadow.getElementById('schedule-day-select') as HTMLSelectElement;
+    const dayInput = this.shadow.getElementById('schedule-day-input') as HTMLInputElement;
+    if (daySelect && dayInput) {
+      dayInput.min = new Date().toISOString().split('T')[0]!;
+      daySelect.addEventListener('change', () => {
+        dayInput.style.display = daySelect.value === 'custom' ? 'block' : 'none';
+      });
+    }
   }
 
   // ── renderSettings ──
@@ -323,7 +365,7 @@ export class PopupPanel {
 
     body.innerHTML = `
       <div class="error-banner">⚠️ ${escapeHtml(error)}</div>
-      <p style="font-size:13px;color:#a6adc8;margin-bottom:12px;">
+      <p style="font-size:13px;color:#8B8682;margin-bottom:12px;">
         Configure your API keys below, then click <strong>Re-analyze</strong>.
       </p>
 
@@ -406,6 +448,30 @@ export class PopupPanel {
     }
   }
 
+  // ── getScheduleDay ──
+
+  private getScheduleDay(): string | null {
+    const select = this.shadow.getElementById('schedule-day-select') as HTMLSelectElement;
+    if (!select) return null;
+
+    const today = new Date();
+    switch (select.value) {
+      case 'today':
+        return today.toISOString().split('T')[0]!;
+      case 'tomorrow': {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow.toISOString().split('T')[0]!;
+      }
+      case 'custom': {
+        const input = this.shadow.getElementById('schedule-day-input') as HTMLInputElement;
+        return input?.value || null;
+      }
+      default:
+        return null; // auto
+    }
+  }
+
   // ── handleExport ──
 
   private async handleExport(): Promise<void> {
@@ -414,8 +480,10 @@ export class PopupPanel {
 
     try {
       // Step 1: Find optimal slot
+      const scheduleDay = this.getScheduleDay();
       const slotRes = await sendMessage<{ start: string; end: string }>('FIND_OPTIMAL_SLOT', {
         durationHours: t.estimatedHours,
+        preferredDate: scheduleDay,
       });
       if (!slotRes.success || !slotRes.data) {
         this.showError('Failed to find available time slot');
@@ -488,14 +556,14 @@ export class PopupPanel {
   private showSuccess(msg: string): void {
     const area = this.shadow.getElementById('conflict-area');
     if (!area) return;
-    area.innerHTML = `<div style="color:#a6e3a1;padding:8px 0;">✓ ${escapeHtml(msg)}</div>`;
+    area.innerHTML = `<div style="color:#5B8C5A;padding:8px 0;">✓ ${escapeHtml(msg)}</div>`;
     setTimeout(() => this.hide(), 2000);
   }
 
   private showError(msg: string): void {
     const area = this.shadow.getElementById('conflict-area');
     if (!area) return;
-    area.innerHTML = `<div style="color:#f38ba8;padding:8px 0;">✗ ${escapeHtml(msg)}</div>`;
+    area.innerHTML = `<div style="color:#D4352B;padding:8px 0;">✗ ${escapeHtml(msg)}</div>`;
   }
 }
 
