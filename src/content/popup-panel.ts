@@ -1,5 +1,6 @@
 import type { ExtractedTask, ScheduledTask, ConflictResult } from '../shared/types';
 import { sendMessage } from './index';
+import { t } from '../shared/i18n';
 
 export class PopupPanel {
   private host: HTMLDivElement;
@@ -256,12 +257,12 @@ export class PopupPanel {
     const shell = document.createElement('div');
     shell.innerHTML = `
       <div class="header">
-        <h3>🤖 Goofish Agent</h3>
+        <h3>${t('panelHeader')}</h3>
         <button class="close-btn" id="close-btn">&times;</button>
       </div>
       <div class="body" id="panel-body">
         <div class="empty-state">
-          <p>Click 🎣 on a Xianyu conversation to analyze it</p>
+          <p>${t('statusEmpty')}</p>
         </div>
       </div>
     `;
@@ -278,7 +279,7 @@ export class PopupPanel {
     body.innerHTML = `
       <div class="loading-spinner">
         <div class="spinner"></div>
-        <div class="loading-text">Analyzing conversation with AI...</div>
+        <div class="loading-text">${t('statusLoading')}</div>
       </div>
     `;
   }
@@ -287,56 +288,57 @@ export class PopupPanel {
 
   private renderTask(): void {
     if (!this.pendingTask) return;
-    const t = this.pendingTask;
+    const task = this.pendingTask;
     const body = this.shadow.getElementById('panel-body');
     if (!body) return;
 
-    const urgencyClass = `urgency-${t.urgency}`;
+    const urgencyClass = `urgency-${task.urgency}`;
+    const urgencyText = t(task.urgency === 'high' ? 'urgencyHigh' : task.urgency === 'low' ? 'urgencyLow' : 'urgencyMedium');
 
     body.innerHTML = `
       <div class="field">
-        <div class="field-label">Buyer</div>
-        <div class="field-value">${escapeHtml(t.buyerName)}</div>
+        <div class="field-label">${t('fieldBuyer')}</div>
+        <div class="field-value">${escapeHtml(task.buyerName)}</div>
       </div>
       <div class="field">
-        <div class="field-label">Requirement</div>
-        <div class="field-value">${escapeHtml(t.requirement)}</div>
+        <div class="field-label">${t('fieldRequirement')}</div>
+        <div class="field-value">${escapeHtml(task.requirement)}</div>
       </div>
       <div class="field">
-        <div class="field-label">Urgency</div>
-        <div class="field-value ${urgencyClass}">${t.urgency.toUpperCase()} — ${escapeHtml(t.urgencyReason)}</div>
+        <div class="field-label">${t('fieldUrgency')}</div>
+        <div class="field-value ${urgencyClass}">${urgencyText} — ${escapeHtml(task.urgencyReason)}</div>
       </div>
       <div class="field">
-        <div class="field-label">Price</div>
-        <div class="field-value">¥${t.price ?? '—'}</div>
+        <div class="field-label">${t('fieldPrice')}</div>
+        <div class="field-value">¥${task.price ?? '—'}</div>
       </div>
       <div class="field">
-        <div class="field-label">Est. Hours</div>
-        <div class="field-value">${t.estimatedHours}h</div>
+        <div class="field-label">${t('fieldEstHours')}</div>
+        <div class="field-value">${task.estimatedHours}h</div>
       </div>
-      ${t.deadline ? `
+      ${task.deadline ? `
       <div class="field">
-        <div class="field-label">Deadline</div>
-        <div class="field-value">${escapeHtml(t.deadline)}</div>
+        <div class="field-label">${t('fieldDeadline')}</div>
+        <div class="field-value">${escapeHtml(task.deadline)}</div>
       </div>` : ''}
-      ${t.specialNotes ? `
+      ${task.specialNotes ? `
       <div class="field">
-        <div class="field-label">Notes</div>
-        <div class="field-value">${escapeHtml(t.specialNotes)}</div>
+        <div class="field-label">${t('fieldNotes')}</div>
+        <div class="field-value">${escapeHtml(task.specialNotes)}</div>
       </div>` : ''}
       <div class="field">
-        <div class="field-label">Schedule Day</div>
+        <div class="field-label">${t('fieldScheduleDay')}</div>
         <select id="schedule-day-select" class="day-select">
-          <option value="auto" selected>🤖 Auto (程序自动安排)</option>
-          <option value="today">📅 Today</option>
-          <option value="tomorrow">📅 Tomorrow</option>
-          <option value="custom">📅 Pick a date...</option>
+          <option value="auto" selected>${t('optionAuto')}</option>
+          <option value="today">${t('optionToday')}</option>
+          <option value="tomorrow">${t('optionTomorrow')}</option>
+          <option value="custom">${t('optionCustom')}</option>
         </select>
         <input type="date" id="schedule-day-input" class="settings-input" style="display:none; margin-top:8px;" />
       </div>
       <div class="actions">
-        <button class="btn btn-primary" id="export-btn">Export to Notion →</button>
-        <button class="btn btn-secondary" id="reanalyze-btn">Re-analyze</button>
+        <button class="btn btn-primary" id="export-btn">${t('btnExport')}</button>
+        <button class="btn btn-secondary" id="reanalyze-btn">${t('btnReanalyze')}</button>
       </div>
       <div id="conflict-area"></div>
     `;
@@ -366,28 +368,28 @@ export class PopupPanel {
     body.innerHTML = `
       <div class="error-banner">⚠️ ${escapeHtml(error)}</div>
       <p style="font-size:13px;color:#8B8682;margin-bottom:12px;">
-        Configure your API keys below, then click <strong>Re-analyze</strong>.
+        ${t('statusSettingsGuide')}
       </p>
 
-      <label class="settings-label" for="settings-openai-key">OpenAI API Key</label>
-      <input class="settings-input" type="password" id="settings-openai-key" placeholder="sk-..." autocomplete="off" />
+      <label class="settings-label" for="settings-openai-key">${t('labelOpenAiKey')}</label>
+      <input class="settings-input" type="password" id="settings-openai-key" placeholder="${t('placeholderOpenAiKey')}" autocomplete="off" />
 
-      <label class="settings-label" for="settings-openai-base-url">OpenAI Base URL</label>
-      <input class="settings-input" type="text" id="settings-openai-base-url" placeholder="https://api.openai.com/v1" autocomplete="off" />
+      <label class="settings-label" for="settings-openai-base-url">${t('labelOpenAiBaseUrl')}</label>
+      <input class="settings-input" type="text" id="settings-openai-base-url" placeholder="${t('placeholderOpenAiBaseUrl')}" autocomplete="off" />
 
-      <label class="settings-label" for="settings-ai-model">AI Model</label>
-      <input class="settings-input" type="text" id="settings-ai-model" placeholder="gpt-4o-mini" autocomplete="off" />
+      <label class="settings-label" for="settings-ai-model">${t('labelAiModel')}</label>
+      <input class="settings-input" type="text" id="settings-ai-model" placeholder="${t('placeholderAiModel')}" autocomplete="off" />
 
-      <label class="settings-label" for="settings-notion-token">Notion Integration Token</label>
-      <input class="settings-input" type="password" id="settings-notion-token" placeholder="ntn-..." autocomplete="off" />
+      <label class="settings-label" for="settings-notion-token">${t('labelNotionToken')}</label>
+      <input class="settings-input" type="password" id="settings-notion-token" placeholder="${t('placeholderNotionToken')}" autocomplete="off" />
 
-      <label class="settings-label" for="settings-notion-db-id">Notion Database ID</label>
-      <input class="settings-input" type="text" id="settings-notion-db-id" placeholder="Your database ID" />
+      <label class="settings-label" for="settings-notion-db-id">${t('labelNotionDbId')}</label>
+      <input class="settings-input" type="text" id="settings-notion-db-id" placeholder="${t('placeholderNotionDbId')}" />
 
       <div id="settings-status"></div>
 
-      <button class="btn btn-primary btn-full" id="settings-save-btn">💾 Save Settings</button>
-      <button class="btn btn-secondary btn-full" id="settings-reanalyze-btn" style="margin-top:8px;">🔄 Re-analyze</button>
+      <button class="btn btn-primary btn-full" id="settings-save-btn">${t('btnSaveSettings')}</button>
+      <button class="btn btn-secondary btn-full" id="settings-reanalyze-btn" style="margin-top:8px;">${t('btnReanalyze')}</button>
     `;
 
     // Load current settings
@@ -439,9 +441,9 @@ export class PopupPanel {
         notionDatabaseId: this.getInputValue('settings-notion-db-id'),
       });
       if (res.success) {
-        if (statusEl) statusEl.innerHTML = '<div class="status-msg success">✓ Settings saved! Click Re-analyze below.</div>';
+        if (statusEl) statusEl.innerHTML = `<div class="status-msg success">✓ ${t('statusSaveSuccess')}</div>`;
       } else {
-        if (statusEl) statusEl.innerHTML = `<div class="status-msg error">✗ ${escapeHtml(res.error || 'Save failed')}</div>`;
+        if (statusEl) statusEl.innerHTML = `<div class="status-msg error">✗ ${escapeHtml(res.error || t('statusSaveFailed'))}</div>`;
       }
     } catch (err) {
       if (statusEl) statusEl.innerHTML = `<div class="status-msg error">✗ ${escapeHtml(String(err))}</div>`;
@@ -476,17 +478,17 @@ export class PopupPanel {
 
   private async handleExport(): Promise<void> {
     if (!this.pendingTask) return;
-    const t = this.pendingTask;
+    const task = this.pendingTask;
 
     try {
       // Step 1: Find optimal slot
       const scheduleDay = this.getScheduleDay();
       const slotRes = await sendMessage<{ start: string; end: string }>('FIND_OPTIMAL_SLOT', {
-        durationHours: t.estimatedHours,
+        durationHours: task.estimatedHours,
         preferredDate: scheduleDay,
       });
       if (!slotRes.success || !slotRes.data) {
-        this.showError('Failed to find available time slot');
+        this.showError(t('statusSlotFailed'));
         return;
       }
 
@@ -507,29 +509,29 @@ export class PopupPanel {
       // Step 3: Build ScheduledTask and sync to Notion
       const scheduledTask: ScheduledTask = {
         id: crypto.randomUUID(),
-        buyerName: t.buyerName,
-        requirement: t.requirement,
-        urgency: t.urgency,
-        urgencyReason: t.urgencyReason,
-        price: t.price,
-        estimatedHours: t.estimatedHours,
-        deadline: t.deadline,
-        specialNotes: t.specialNotes,
+        buyerName: task.buyerName,
+        requirement: task.requirement,
+        urgency: task.urgency,
+        urgencyReason: task.urgencyReason,
+        price: task.price,
+        estimatedHours: task.estimatedHours,
+        deadline: task.deadline,
+        specialNotes: task.specialNotes,
         status: 'scheduled',
         scheduledStart: start,
         scheduledEnd: end,
         date: taskDate,
-        chatUrl: t.chatUrl,
+        chatUrl: task.chatUrl,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
       const syncRes = await sendMessage<{ pageId: string }>('SYNC_TO_NOTION', { task: scheduledTask });
       if (syncRes.success) {
-        this.showSuccess('Task synced to Notion!');
+        this.showSuccess(t('statusExportSuccess'));
         this.pendingTask = null;
       } else {
-        this.showError(syncRes.error || 'Sync failed');
+        this.showError(syncRes.error || t('statusExportFailed'));
       }
     } catch (err) {
       this.showError(String(err));
@@ -539,18 +541,19 @@ export class PopupPanel {
   private showConflict(conflict: ConflictResult): void {
     const area = this.shadow.getElementById('conflict-area');
     if (!area) return;
-    const taskNames = conflict.conflictingTasks
-      .map((t) => `${t.buyerName} - ${t.requirement}`)
-      .join(', ');
-    area.innerHTML = `
-      <div class="conflict-banner">
-        ⚠️ Conflict: overlaps with ${escapeHtml(taskNames)}
-        <div style="margin-top: 8px;">
-          <button class="btn btn-primary" id="resolve-btn">Resolve (auto-reschedule)</button>
-          <button class="btn btn-secondary" id="ignore-btn">Ignore & Export Anyway</button>
-        </div>
-      </div>
-    `;
+    const conflicting = conflict.conflictingTasks || [];
+    const taskNames = conflicting.length
+      ? conflicting.map((ct) => `${ct.buyerName || t('unknown')} - ${ct.requirement || t('na')}`).join(', ')
+      : '';
+    const conflictMsg = taskNames
+      ? t('statusConflict', [taskNames])
+      : t('statusConflictUnknown');
+    area.innerHTML = '<div class="conflict-banner">' + conflictMsg +
+      '<div style="margin-top: 8px;">' +
+        '<button class="btn btn-primary" id="resolve-btn">' + t('btnResolve') + '</button>' +
+        '<button class="btn btn-secondary" id="ignore-btn">' + t('btnIgnore') + '</button>' +
+      '</div>' +
+    '</div>';
   }
 
   private showSuccess(msg: string): void {

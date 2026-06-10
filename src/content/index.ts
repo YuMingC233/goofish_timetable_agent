@@ -1,6 +1,7 @@
 import { scrapeChat } from './scraper';
 import type { BackgroundMessage, BackgroundResponse, ExtractedTask, ConflictResult, ScheduledTask } from '../shared/types';
 import { formatChatForAI } from '../shared/prompts';
+import { t } from '../shared/i18n';
 import { FloatingBall } from './floating-ball';
 import { PopupPanel } from './popup-panel';
 
@@ -15,19 +16,35 @@ function injectRoot(): HTMLElement {
   return root;
 }
 
+// Check if extension context is still valid
+function isExtensionValid(): boolean {
+  try {
+    return !!chrome.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
 // Send message to background service worker
 async function sendMessage<T = unknown>(
   type: BackgroundMessage['type'],
   payload: unknown,
 ): Promise<BackgroundResponse<T>> {
+  if (!isExtensionValid()) {
+    return { success: false, error: t('statusContextInvalid') };
+  }
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type, payload }, (response: BackgroundResponse<T>) => {
-      if (chrome.runtime.lastError) {
-        resolve({ success: false, error: chrome.runtime.lastError.message });
-      } else {
-        resolve(response);
-      }
-    });
+    try {
+      chrome.runtime.sendMessage({ type, payload }, (response: BackgroundResponse<T>) => {
+        if (chrome.runtime.lastError) {
+          resolve({ success: false, error: chrome.runtime.lastError.message });
+        } else {
+          resolve(response);
+        }
+      });
+    } catch (err) {
+      resolve({ success: false, error: err instanceof Error ? err.message : String(err) });
+    }
   });
 }
 
@@ -102,7 +119,7 @@ ball.onGenerateClick(() => {
 ball.onConfigClick(() => {
   // Show the popup panel with settings form
   document.dispatchEvent(
-    new CustomEvent('goofish:extractionFailed', { detail: { error: 'Environment Configuration' } }),
+    new CustomEvent('goofish:extractionFailed', { detail: { error: t('statusEnvConfig') } }),
   );
 });
 

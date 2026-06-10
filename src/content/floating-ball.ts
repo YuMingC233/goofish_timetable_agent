@@ -1,3 +1,5 @@
+import { t } from '../shared/i18n';
+
 export class FloatingBall {
   private el: HTMLDivElement;
   private shadow: ShadowRoot;
@@ -85,7 +87,7 @@ export class FloatingBall {
           color: #D4352B;
         }
       </style>
-      <div class="ball" title="Goofish Timetable Agent">
+      <div class="ball" title="${t('ballTitle')}">
         🎣
         ${this.badgeEl.outerHTML}
       </div>
@@ -105,13 +107,13 @@ export class FloatingBall {
     generateBtn.id = 'ctx-generate';
     generateBtn.style.cssText =
       'display:block;width:100%;padding:8px 14px;border:none;background:none;cursor:pointer;text-align:left;color:#1C1917;font-size:13px;';
-    generateBtn.textContent = '🎣 开始生成';
+    generateBtn.textContent = t('ctxMenuGenerate');
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'ctx-settings';
     settingsBtn.style.cssText =
       'display:block;width:100%;padding:8px 14px;border:none;background:none;cursor:pointer;text-align:left;color:#1C1917;font-size:13px;';
-    settingsBtn.textContent = '⚙️ 环境配置';
+    settingsBtn.textContent = t('ctxMenuConfig');
 
     // Menu button click handlers
     generateBtn.addEventListener('click', (e) => {

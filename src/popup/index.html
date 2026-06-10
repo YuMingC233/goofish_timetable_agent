@@ -3,33 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Goofish Agent — Settings</title>
+  <title id="popup-title">Goofish Agent — Settings</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="container">
-    <h1>🎣 Goofish Agent</h1>
-    <p class="subtitle">Configure your API keys to get started</p>
+    <h1 id="popup-heading">🎣 Goofish Agent</h1>
+    <p id="popup-subtitle" class="subtitle">Configure your API keys to get started</p>
 
     <form id="settings-form">
-      <label for="openai-key">OpenAI API Key</label>
+      <label id="label-openai-key" for="openai-key">OpenAI API Key</label>
       <input type="password" id="openai-key" placeholder="sk-..." autocomplete="off" />
 
-      <label for="openai-base-url">OpenAI Base URL</label>
+      <label id="label-openai-base-url" for="openai-base-url">OpenAI Base URL</label>
       <input type="text" id="openai-base-url" placeholder="https://api.openai.com/v1" autocomplete="off" />
 
-      <label for="ai-model">AI Model</label>
+      <label id="label-ai-model" for="ai-model">AI Model</label>
       <input type="text" id="ai-model" placeholder="gpt-4o-mini" autocomplete="off" />
 
-      <label for="notion-token">Notion Integration Token</label>
+      <label id="label-notion-token" for="notion-token">Notion Integration Token</label>
       <input type="password" id="notion-token" placeholder="ntn-..." autocomplete="off" />
 
-      <label for="notion-db-id">Notion Database ID</label>
+      <label id="label-notion-db-id" for="notion-db-id">Notion Database ID</label>
       <input type="text" id="notion-db-id" placeholder="Your database ID" />
 
       <div id="status" class="status hidden"></div>
 
-      <button type="submit" class="btn-save">Save Settings</button>
+      <button id="popup-save-btn" type="submit" class="btn-save">Save Settings</button>
     </form>
   </div>
 

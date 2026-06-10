@@ -1,4 +1,5 @@
 import type { AppSettings, BackgroundResponse } from '../shared/types';
+import { t } from '../shared/i18n';
 
 const form = document.getElementById('settings-form') as HTMLFormElement;
 const openaiKeyInput = document.getElementById('openai-key') as HTMLInputElement;
@@ -7,6 +8,36 @@ const aiModelInput = document.getElementById('ai-model') as HTMLInputElement;
 const notionTokenInput = document.getElementById('notion-token') as HTMLInputElement;
 const notionDbIdInput = document.getElementById('notion-db-id') as HTMLInputElement;
 const statusEl = document.getElementById('status') as HTMLDivElement;
+const labelOpenAiKey = document.getElementById('label-openai-key') as HTMLLabelElement;
+const labelOpenAiBaseUrl = document.getElementById('label-openai-base-url') as HTMLLabelElement;
+const labelAiModel = document.getElementById('label-ai-model') as HTMLLabelElement;
+const labelNotionToken = document.getElementById('label-notion-token') as HTMLLabelElement;
+const labelNotionDbId = document.getElementById('label-notion-db-id') as HTMLLabelElement;
+const saveBtn = document.getElementById('popup-save-btn') as HTMLButtonElement;
+
+function localizeUI(): void {
+  document.title = t('popupPageTitle');
+
+  const heading = document.getElementById('popup-heading');
+  if (heading) heading.textContent = t('popupHeading');
+
+  const subtitle = document.getElementById('popup-subtitle');
+  if (subtitle) subtitle.textContent = t('popupSubtitle');
+
+  labelOpenAiKey.textContent = t('labelOpenAiKey');
+  labelOpenAiBaseUrl.textContent = t('labelOpenAiBaseUrl');
+  labelAiModel.textContent = t('labelAiModel');
+  labelNotionToken.textContent = t('labelNotionToken');
+  labelNotionDbId.textContent = t('labelNotionDbId');
+
+  saveBtn.textContent = t('popupBtnSave');
+
+  openaiKeyInput.placeholder = t('placeholderOpenAiKey');
+  openaiBaseUrlInput.placeholder = t('placeholderOpenAiBaseUrl');
+  aiModelInput.placeholder = t('placeholderAiModel');
+  notionTokenInput.placeholder = t('placeholderNotionToken');
+  notionDbIdInput.placeholder = t('placeholderNotionDbId');
+}
 
 async function loadSettings(): Promise<void> {
   try {
@@ -48,9 +79,9 @@ form.addEventListener('submit', async (e: Event) => {
     });
 
     if (bg.success) {
-      showStatus('✓ Settings saved!', 'success');
+      showStatus(t('popupStatusSaved'), 'success');
     } else {
-      showStatus(`✗ ${bg.error || 'Failed to save'}`, 'error');
+      showStatus(`✗ ${bg.error || t('popupStatusSaveError')}`, 'error');
     }
   } catch (err) {
     showStatus(`✗ ${String(err)}`, 'error');
@@ -58,4 +89,5 @@ form.addEventListener('submit', async (e: Event) => {
 });
 
 // Load on open
+localizeUI();
 loadSettings();
