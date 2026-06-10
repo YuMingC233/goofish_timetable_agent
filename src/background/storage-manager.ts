@@ -24,3 +24,11 @@ export async function addScheduledTask(task: ScheduledTask): Promise<void> {
   tasks.push(task);
   await chrome.storage.local.set({ [STORAGE_KEYS.SCHEDULED_TASKS]: tasks });
 }
+
+/**
+ * Replace the entire local task cache with a fresh list.
+ * Used after syncing with Notion to remove tasks that were deleted there.
+ */
+export async function replaceScheduledTasks(tasks: ScheduledTask[]): Promise<void> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.SCHEDULED_TASKS]: tasks });
+}

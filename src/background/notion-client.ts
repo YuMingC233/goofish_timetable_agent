@@ -103,6 +103,65 @@ function buildPropValue(type: string, value: unknown): Record<string, unknown> {
   }
 }
 
+// ── Exported ──
+
+/**
+ * Query the Notion database for existing pages (scheduled tasks) and
+ * return their time ranges so the scheduler can use them instead of
+ * stale local cache.
+ *
+ * Only returns tasks that overlap with "today or later" to keep the
+ * result set small and avoid dragging in ancient history.
+ */
+export async function fetchExistingNotionTasks(
+  databaseId: string,
+): Promise<Array<{ notionPageId: string; scheduledStart: string; scheduledEnd: string }>> {
+  const settings = await getSettings();
+  if (!settings.notionToken) return [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  const response = await fetch(`${URLS.NOTION_API_BASE}/databases/${databaseId}/query`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${settings.notionToken}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': NOTION_API_VERSION,
+    },
+    body: JSON.stringify({
+      filter: {
+        property: NOTION_PROPERTY_KEYS.DATE,
+        date: { on_or_after: todayStr },
+      },
+      page_size: 100,
+    }),
+  });
+
+  if (!response.ok) return []; // Non-critical — fall back to local cache
+
+  const data = await response.json();
+  const results = data.results as Array<{ id: string; properties: Record<string, unknown> }>;
+
+  const tasks: Array<{ notionPageId: string; scheduledStart: string; scheduledEnd: string }> = [];
+
+  for (const page of results) {
+    const props = page.properties as Record<string, { type: string; date?: { start: string; end: string | null } }>;
+    const dateProp = props[NOTION_PROPERTY_KEYS.DATE];
+    if (dateProp?.type === 'date' && dateProp.date?.start) {
+      tasks.push({
+        notionPageId: page.id,
+        scheduledStart: dateProp.date.start,
+        scheduledEnd: dateProp.date.end || dateProp.date.start,
+      });
+    }
+  }
+
+  return tasks;
+}
+
 export async function createNotionPage(
   task: ScheduledTask,
   databaseId: string,

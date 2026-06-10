@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSettings, saveSettings, getScheduledTasks, addScheduledTask } from '../../src/background/storage-manager';
+import { getSettings, saveSettings, getScheduledTasks, addScheduledTask, replaceScheduledTasks } from '../../src/background/storage-manager';
 import type { AppSettings, ScheduledTask } from '../../src/shared/types';
 import { DEFAULT_SETTINGS } from '../../src/shared/types';
 
@@ -99,3 +99,38 @@ describe('addScheduledTask', () => {
     expect(stored[0]!.id).toBe('t1');
   });
 });
+
+describe('replaceScheduledTasks', () => {
+  it('replaces the entire task list', async () => {
+    const oldTask: ScheduledTask = {
+      id: 't1', buyerName: 'Old', requirement: 'Old', urgency: 'medium',
+      urgencyReason: '', price: 100, estimatedHours: 2, deadline: null,
+      specialNotes: null, status: 'scheduled',
+      scheduledStart: '2026-06-05T10:00:00.000Z', scheduledEnd: '2026-06-05T12:10:00.000Z',
+      date: '2026-06-05', chatUrl: 'https://seller.goofish.com/chat/1',
+      createdAt: '2026-06-04T00:00:00.000Z', updatedAt: '2026-06-04T00:00:00.000Z',
+    };
+    mockStorage['goofish_scheduled_tasks'] = [oldTask];
+
+    const newTask: ScheduledTask = {
+      id: 't2', buyerName: 'New', requirement: 'New', urgency: 'high',
+      urgencyReason: '', price: 200, estimatedHours: 1, deadline: null,
+      specialNotes: null, status: 'scheduled',
+      scheduledStart: '2026-06-06T10:00:00.000Z', scheduledEnd: '2026-06-06T11:10:00.000Z',
+      date: '2026-06-06', chatUrl: 'https://seller.goofish.com/chat/2',
+      createdAt: '2026-06-05T00:00:00.000Z', updatedAt: '2026-06-05T00:00:00.000Z',
+    };
+    await replaceScheduledTasks([newTask]);
+
+    const tasks = await getScheduledTasks();
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]!.id).toBe('t2');
+  });
+
+  it('clears all tasks when given empty array', async () => {
+    mockStorage['goofish_scheduled_tasks'] = [{ id: 't1' }];
+    await replaceScheduledTasks([]);
+    const tasks = await getScheduledTasks();
+    expect(tasks).toHaveLength(0);
+  });
+});;
