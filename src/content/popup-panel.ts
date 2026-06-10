@@ -7,6 +7,7 @@ export class PopupPanel {
   private shadow: ShadowRoot;
   private visible = false;
   private pendingTask: (ExtractedTask & { chatUrl: string }) | null = null;
+  private exporting = false;
 
   // ── Drag state ──
   private isDragging = false;
@@ -336,6 +337,10 @@ export class PopupPanel {
         </select>
         <input type="date" id="schedule-day-input" class="settings-input" style="display:none; margin-top:8px;" />
       </div>
+      <div class="field">
+        <div class="field-label">${t('fieldScheduledTime')}</div>
+        <div class="field-value" id="scheduled-time-value">—</div>
+      </div>
       <div class="actions">
         <button class="btn btn-primary" id="export-btn">${t('btnExport')}</button>
         <button class="btn btn-secondary" id="reanalyze-btn">${t('btnReanalyze')}</button>
@@ -348,15 +353,22 @@ export class PopupPanel {
       window.dispatchEvent(new Event('goofish:reanalyze'));
     });
 
-    // Wire day selector toggle
+    // Wire day selector toggle + scheduled time refresh
     const daySelect = this.shadow.getElementById('schedule-day-select') as HTMLSelectElement;
     const dayInput = this.shadow.getElementById('schedule-day-input') as HTMLInputElement;
     if (daySelect && dayInput) {
-      dayInput.min = new Date().toISOString().split('T')[0]!;
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      dayInput.min = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
       daySelect.addEventListener('change', () => {
         dayInput.style.display = daySelect.value === 'custom' ? 'block' : 'none';
+        this.refreshScheduledTime();
       });
+      dayInput.addEventListener('change', () => this.refreshScheduledTime());
     }
+
+    // Fetch and display scheduled time on initial render
+    this.refreshScheduledTime();
   }
 
   // ── renderSettings ──
@@ -450,6 +462,36 @@ export class PopupPanel {
     }
   }
 
+  // ── refreshScheduledTime ──
+
+  private async refreshScheduledTime(): Promise<void> {
+    if (!this.pendingTask) return;
+    const el = this.shadow.getElementById('scheduled-time-value');
+    if (!el) return;
+
+    el.textContent = '…';
+
+    try {
+      const scheduleDay = this.getScheduleDay();
+      const res = await sendMessage<{ start: string; end: string }>('FIND_OPTIMAL_SLOT', {
+        durationHours: this.pendingTask.estimatedHours,
+        preferredDate: scheduleDay,
+      });
+      if (res.success && res.data) {
+        const start = new Date(res.data.start);
+        const end = new Date(res.data.end);
+        // Format: MM/DD HH:MM → HH:MM
+        const fmt = (d: Date) =>
+          `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        el.textContent = `${fmt(start)} → ${fmt(end)}`;
+      } else {
+        el.textContent = '—';
+      }
+    } catch {
+      el.textContent = '—';
+    }
+  }
+
   // ── getScheduleDay ──
 
   private getScheduleDay(): string | null {
@@ -457,13 +499,16 @@ export class PopupPanel {
     if (!select) return null;
 
     const today = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localDateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
     switch (select.value) {
       case 'today':
-        return today.toISOString().split('T')[0]!;
+        return localDateStr(today);
       case 'tomorrow': {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        return tomorrow.toISOString().split('T')[0]!;
+        return localDateStr(tomorrow);
       }
       case 'custom': {
         const input = this.shadow.getElementById('schedule-day-input') as HTMLInputElement;
@@ -477,8 +522,18 @@ export class PopupPanel {
   // ── handleExport ──
 
   private async handleExport(): Promise<void> {
-    if (!this.pendingTask) return;
+    if (!this.pendingTask || this.exporting) return;
     const task = this.pendingTask;
+
+    // Enter loading state
+    this.exporting = true;
+    const exportBtn = this.shadow.getElementById('export-btn') as HTMLButtonElement | null;
+    if (exportBtn) {
+      exportBtn.disabled = true;
+      exportBtn.textContent = t('statusLoading');
+      exportBtn.style.opacity = '0.6';
+      exportBtn.style.cursor = 'not-allowed';
+    }
 
     try {
       // Step 1: Find optimal slot
@@ -493,7 +548,8 @@ export class PopupPanel {
       }
 
       const { start, end } = slotRes.data;
-      const taskDate = new Date(start).toISOString().split('T')[0]!;
+      // start is a local-time ISO string (e.g. "2026-06-11T19:00:00"), take date portion directly
+      const taskDate = start.slice(0, 10);
 
       // Step 2: Check for conflicts
       const conflictRes = await sendMessage<ConflictResult>('DETECT_CONFLICTS', {
@@ -535,6 +591,15 @@ export class PopupPanel {
       }
     } catch (err) {
       this.showError(String(err));
+    } finally {
+      // Restore button state
+      this.exporting = false;
+      if (exportBtn) {
+        exportBtn.disabled = false;
+        exportBtn.textContent = t('btnExport');
+        exportBtn.style.opacity = '';
+        exportBtn.style.cursor = '';
+      }
     }
   }
 
