@@ -8,7 +8,7 @@ describe('buildPrompt', () => {
     const result = buildPrompt(messages);
 
     expect(result).toContain('Buyer: 这个能做吗？周五前');
-    expect(result).toContain('排期助手');
+    expect(result).toContain('scheduling assistant');
     expect(result).toContain('buyerName');
     expect(result).toContain('urgency');
   });
@@ -34,7 +34,7 @@ describe('formatChatForAI', () => {
     const result = formatChatForAI(conversation);
 
     // Buyer name header
-    expect(result).toContain('买家: Se7eN丶丶');
+    expect(result).toContain('Buyer: Se7eN丶丶');
     // Each message has timestamp, name, and content
     expect(result).toContain('[06-03 21:50] Se7eN丶丶: 这个能做吗？');
     expect(result).toContain('[06-03 21:55] 写程序高手Connor: 你说下需求呢');

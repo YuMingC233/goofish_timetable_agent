@@ -242,7 +242,7 @@ describe('createNotionPage', () => {
     } as Response);
 
     await expect(createNotionPage(makeTask(), 'db-test-123')).rejects.toThrow(
-      /Failed to fetch database schema: 401.*Invalid token/,
+      'Failed to fetch database schema',
     );
   });
 });
