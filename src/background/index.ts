@@ -1,4 +1,5 @@
 import type { BackgroundMessage, BackgroundResponse } from '../shared/types';
+import { t } from '../shared/i18n';
 import { extractTask } from './ai-client';
 import { detectConflicts } from './conflict-engine';
 import { findOptimalSlot } from './scheduler';
@@ -77,7 +78,7 @@ async function handleMessage(message: BackgroundMessage): Promise<BackgroundResp
       }
 
       default:
-        return { success: false, error: `Unknown message type: ${(message as BackgroundMessage).type}` };
+        return { success: false, error: t('errorUnknownMessageType') + `: ${(message as BackgroundMessage).type}` };
     }
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);

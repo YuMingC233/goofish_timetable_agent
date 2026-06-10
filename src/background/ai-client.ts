@@ -1,12 +1,13 @@
 import type { ExtractedTask } from '../shared/types';
 import { buildPrompt } from '../shared/prompts';
+import { t } from '../shared/i18n';
 import { getSettings } from './storage-manager';
 import { DEFAULT_OPENAI_BASE_URL, AI_TIMEOUT_MS, AI_MAX_RETRIES } from '../shared/constants';
 
 export async function extractTask(chatMessages: string): Promise<ExtractedTask> {
   const settings = await getSettings();
   if (!settings.openaiApiKey) {
-    throw new Error('OpenAI API key not configured. Please set it in the extension popup.');
+    throw new Error(t('errorNoApiKey'));
   }
 
   // Normalize: strip trailing slashes, then append /chat/completions
@@ -23,7 +24,7 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
       const body = {
         model: settings.aiModel,
         messages: [
-          { role: 'system', content: 'You are a helpful assistant. Always reply with valid JSON.' },
+          { role: 'system', content: t('aiSystemPrompt') },
           { role: 'user', content: prompt },
         ],
         response_format: { type: 'json_object' },
@@ -52,9 +53,8 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
         // Include response body in error for easier debugging
         let errorBody = '';
         try { errorBody = await response.text(); } catch { /* ignore */ }
-        throw new Error(
-          `AI API error ${response.status}: ${response.statusText}${errorBody ? ' — ' + errorBody.slice(0, 300) : ''}`,
-        );
+        const bodySnippet = errorBody ? ' — ' + errorBody.slice(0, 300) : '';
+        throw new Error(t('errorAiApi', [String(response.status), response.statusText, bodySnippet]));
       }
 
       const data = await response.json();
@@ -73,7 +73,7 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
     }
   }
 
-  throw lastError || new Error('AI extraction failed after retries');
+  throw lastError || new Error(t('errorExtractionFailed'));
 }
 
 function parseAIResponse(raw: string): ExtractedTask {
@@ -103,7 +103,7 @@ function parseAIResponse(raw: string): ExtractedTask {
       specialNotes: parsed.specialNotes || null,
     };
   } catch {
-    throw new Error(`Failed to parse AI response as JSON: ${raw.slice(0, 200)}`);
+    throw new Error(t('errorParseJson') + ': ' + raw.slice(0, 200));
   }
 }
 

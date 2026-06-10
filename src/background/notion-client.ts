@@ -1,18 +1,19 @@
 import type { ScheduledTask, TaskStatus, Urgency } from '../shared/types';
+import { t } from '../shared/i18n';
 import { getSettings } from './storage-manager';
 import { URLS, NOTION_API_VERSION, NOTION_PROPERTY_KEYS } from '../shared/constants';
 
 const URGENCY_LABELS: Record<Urgency, string> = {
-  high: '🔴 High',
-  medium: '🟡 Medium',
-  low: '🟢 Low',
+  high: t('notionStatusHigh'),
+  medium: t('notionStatusMedium'),
+  low: t('notionStatusLow'),
 };
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
-  scheduled: '📋 Scheduled',
-  in_progress: '🔄 In Progress',
-  done: '✅ Done',
-  cancelled: '❌ Cancelled',
+  scheduled: t('notionStatusScheduled'),
+  in_progress: t('notionStatusInProgress'),
+  done: t('notionStatusDone'),
+  cancelled: t('notionStatusCancelled'),
 };
 
 /** Lightweight database property schema fetched from Notion. */
@@ -37,9 +38,8 @@ async function fetchDbSchema(databaseId: string, token: string): Promise<DbSchem
   if (!response.ok) {
     let errorBody = '';
     try { errorBody = await response.text(); } catch { /* ignore */ }
-    throw new Error(
-      `Failed to fetch database schema: ${response.status}${errorBody ? ' — ' + errorBody.slice(0, 300) : ''}`,
-    );
+    const bodySnippet = errorBody ? ' — ' + errorBody.slice(0, 300) : '';
+    throw new Error(t('errorNotionSchema', [String(response.status), bodySnippet]));
   }
   const data = await response.json();
   const props: DbSchema = {};
@@ -109,14 +109,14 @@ export async function createNotionPage(
 ): Promise<string> {
   const settings = await getSettings();
   if (!settings.notionToken) {
-    throw new Error('Notion token not configured. Please set it in the extension popup.');
+    throw new Error(t('errorNotionToken'));
   }
 
   // Fetch database schema to map property names/types dynamically
   const schema = await fetchDbSchema(databaseId, settings.notionToken);
   const titleName = findTitleProp(schema);
   if (!titleName) {
-    throw new Error('Database has no title property — please add one in Notion.');
+    throw new Error(t('errorNotionNoTitle'));
   }
 
   const consumed = new Set<string>();
@@ -192,9 +192,8 @@ export async function createNotionPage(
   if (!response.ok) {
     let errorBody = '';
     try { errorBody = await response.text(); } catch { /* ignore */ }
-    throw new Error(
-      `Notion API error ${response.status}: ${response.statusText}${errorBody ? ' — ' + errorBody.slice(0, 500) : ''}`,
-    );
+    const bodySnippet = errorBody ? ' — ' + errorBody.slice(0, 500) : '';
+    throw new Error(t('errorNotionApi', [String(response.status), response.statusText, bodySnippet]));
   }
 
   const data = await response.json();
