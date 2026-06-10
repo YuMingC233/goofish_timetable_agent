@@ -41,8 +41,6 @@ export const MEDIUM_URGENCY_KEYWORDS = ['这周', '本周', '几天内', '这两
 
 export const BUFFER_MINUTES = 10;
 export const DEFAULT_BASE_PRICE = 300;
-export const DEFAULT_WORK_START = '09:00';
-export const DEFAULT_WORK_END = '18:00';
 
 // ── AI ──
 
