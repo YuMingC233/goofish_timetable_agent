@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createNotionPage } from '../../src/background/notion-client';
+import { createNotionPage, fetchExistingNotionTasks } from '../../src/background/notion-client';
 import type { ScheduledTask } from '../../src/shared/types';
 import { NOTION_PROPERTY_KEYS } from '../../src/shared/constants';
 
@@ -242,7 +242,106 @@ describe('createNotionPage', () => {
     } as Response);
 
     await expect(createNotionPage(makeTask(), 'db-test-123')).rejects.toThrow(
-      'Failed to fetch database schema',
+      /Failed to fetch database schema.*401/,
     );
+  });
+});
+
+describe('fetchExistingNotionTasks', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns tasks with date properties from Notion query', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch');
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        results: [
+          {
+            id: 'page-1',
+            properties: {
+              [PROP.DATE]: {
+                type: 'date',
+                date: { start: '2026-06-05T19:00:00.000Z', end: '2026-06-05T21:10:00.000Z' },
+              },
+            },
+          },
+          {
+            id: 'page-2',
+            properties: {
+              [PROP.DATE]: {
+                type: 'date',
+                date: { start: '2026-06-06T10:00:00.000Z', end: '2026-06-06T12:10:00.000Z' },
+              },
+            },
+          },
+        ],
+      }),
+    } as Response);
+
+    const tasks = await fetchExistingNotionTasks('db-test-123');
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0]!.notionPageId).toBe('page-1');
+    expect(tasks[0]!.scheduledStart).toBe('2026-06-05T19:00:00.000Z');
+    expect(tasks[0]!.scheduledEnd).toBe('2026-06-05T21:10:00.000Z');
+    expect(tasks[1]!.notionPageId).toBe('page-2');
+
+    // Verify the query payload
+    const callArgs = fetchSpy.mock.calls[0]!;
+    expect(callArgs[0]).toContain('/databases/db-test-123/query');
+    const body = JSON.parse(callArgs[1]!.body as string);
+    expect(body.filter.property).toBe(PROP.DATE);
+  });
+
+  it('returns empty array when Notion query fails', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    } as Response);
+
+    const tasks = await fetchExistingNotionTasks('db-test-123');
+    expect(tasks).toEqual([]);
+  });
+
+  it('skips pages without a date property', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        results: [
+          {
+            id: 'page-no-date',
+            properties: {
+              [PROP.BUYER]: { type: 'rich_text', rich_text: [] },
+            },
+          },
+        ],
+      }),
+    } as Response);
+
+    const tasks = await fetchExistingNotionTasks('db-test-123');
+    expect(tasks).toHaveLength(0);
+  });
+
+  it('uses start as end when end is null', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        results: [
+          {
+            id: 'page-1',
+            properties: {
+              [PROP.DATE]: {
+                type: 'date',
+                date: { start: '2026-06-05T19:00:00.000Z', end: null },
+              },
+            },
+          },
+        ],
+      }),
+    } as Response);
+
+    const tasks = await fetchExistingNotionTasks('db-test-123');
+    expect(tasks[0]!.scheduledEnd).toBe('2026-06-05T19:00:00.000Z');
   });
 });

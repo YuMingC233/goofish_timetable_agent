@@ -1,5 +1,13 @@
 // ── Core domain types ──
 
+// Build-time env constants injected by Vite (see vite.config.ts → define).
+// In tests they fall back to '' via vitest.config.ts.
+declare const __ENV_OPENAI_API_KEY__: string;
+declare const __ENV_OPENAI_BASE_URL__: string;
+declare const __ENV_NOTION_TOKEN__: string;
+declare const __ENV_NOTION_DATABASE_ID__: string;
+declare const __ENV_AI_MODEL__: string;
+
 export type Urgency = 'high' | 'medium' | 'low';
 export type TaskStatus = 'scheduled' | 'in_progress' | 'done' | 'cancelled';
 export type AIProvider = 'openai' | 'anthropic' | 'ollama';
@@ -48,23 +56,19 @@ export interface AppSettings {
   aiModel: string;
   defaultBasePrice: number;
   defaultBufferMinutes: number;
-  defaultWorkStart: string; // "09:00"
-  defaultWorkEnd: string; // "18:00"
 }
 
 export type AppSettingsPartial = Partial<AppSettings>;
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  openaiApiKey: '',
-  openaiBaseUrl: 'https://api.openai.com/v1',
-  notionToken: '',
-  notionDatabaseId: '',
+  openaiApiKey: __ENV_OPENAI_API_KEY__,
+  openaiBaseUrl: __ENV_OPENAI_BASE_URL__ || 'https://api.openai.com/v1',
+  notionToken: __ENV_NOTION_TOKEN__,
+  notionDatabaseId: __ENV_NOTION_DATABASE_ID__,
   aiProvider: 'openai',
-  aiModel: 'gpt-4o-mini',
+  aiModel: __ENV_AI_MODEL__ || 'gpt-4o-mini',
   defaultBasePrice: 0,
   defaultBufferMinutes: 10,
-  defaultWorkStart: '19:00',
-  defaultWorkEnd: '23:00',
 };
 
 // ── Message passing protocol ──
