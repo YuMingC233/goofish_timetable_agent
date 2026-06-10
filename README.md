@@ -1,5 +1,7 @@
 # Goofish Timetable Agent
 
+[中文文档](./README_ZH.md)
+
 A browser extension that brings AI-powered auto-scheduling and Notion calendar sync to the [闲鱼 (Xianyu)](https://seller.goofish.com) web workbench — so you can stop juggling conversations and start shipping on time.
 
 ## Problem
@@ -15,87 +17,62 @@ This extension solves that by sitting **beside the Xianyu chat page**, extractin
 
 ## Core Workflow
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    XIANYU WEB WORKBENCH (chat page)                 │
-│                                                                     │
-│  ┌──────────────────────┐          ┌────────────────────────────┐  │
-│  │   Conversation List   │          │    Active Chat Thread       │  │
-│  │                        │          │                              │  │
-│  │  ● Buyer A            │          │  Buyer: "这个能做吗？周五前"     │  │
-│  │  ● Buyer B            │          │  You:   "可以，加急+50"        │  │
-│  │  ● Buyer C  ◄ active  │          │  Buyer: "OK 拍了"             │  │
-│  │                        │          │                              │  │
-│  └──────────────────────┘          └────────────────────────────┘  │
-│                                                          ┌───────┐ │
-│                                                          │  🎣   │ │  ← floating ball
-│                                                          └───────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     │ click
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         POPUP PANEL                                  │
-│  ┌───────────────────────────────────────────────────────────────┐ │
-│  │  🤖 AI Summary                                  [ Re-analyze ] │ │
-│  │  ───────────────────────────────────────────────────────────── │ │
-│  │  Buyer:      张三 (zhangsan)                                    │ │
-│  │  Requirement: Logo design, 3 drafts, minimalist style           │ │
-│  │  Urgency:     🔴 High — buyer said "周五前" (by Friday)          │ │
-│  │  Price:       ¥350  (¥300 base + ¥50 rush)                     │ │
-│  │  Est. Hours:  4h  →  Schedule: Thu 14:00–18:00                 │ │
-│  │  Buffer:      +10 min → 18:10 (ready for next task)            │ │
-│  │  ────────────────────────────────────────────────────────────── │ │
-│  │  ⚠️  Conflict: overlaps "Poster edit" (Thu 16:00–18:00)        │ │
-│  │         [ Resolve ]  [ Ignore ]                                 │ │
-│  │  ────────────────────────────────────────────────────────────── │ │
-│  │  Notion DB:  ✓ Connected (Scheduling DB)                       │ │
-│  │  [ Edit ]  [ Export to Notion → ]                              │ │
-│  └───────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     │ export
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                       NOTION CALENDAR DATABASE                       │
-│  ┌──────┬──────────┬────────┬──────────┬────────┬───────────────┐ │
-│  │ Date │  Buyer   │  Task  │ Priority │ Price  │    Status     │ │
-│  ├──────┼──────────┼────────┼──────────┼────────┼───────────────┤ │
-│  │ 6/5  │  张三     │ Logo   │  🔴 High │  ¥350  │  📋 Scheduled │ │
-│  │ 6/6  │  李四     │ Poster │  🟡 Med  │  ¥200  │  ⏳ Pending   │ │
-│  │ 6/7  │  王五     │ Avatar │  🟢 Low  │  ¥150  │  ✅ Done      │ │
-│  └──────┴──────────┴────────┴──────────┴────────┴───────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph xianyu["闲鱼 Web Workbench (chat page)"]
+        direction LR
+        conv["会话列表<br/>● 买家 A<br/>● 买家 B<br/>● 买家 C ◄ active"]
+        chat["当前聊天<br/>买家: 这个能做吗？周五前<br/>你: 可以，加急+50<br/>买家: OK 拍了"]
+        ball["🎣<br/>悬浮球"]
+    end
+
+    subgraph popup["弹出面板"]
+        ai["🤖 AI 摘要<br/>买家: 张三<br/>需求: Logo 设计, 3稿, 极简风格<br/>紧急度: 🔴 高 — 买家说 周五前<br/>价格: ¥350 (¥300 基础 + ¥50 加急)<br/>预计工时: 4h → 安排: 周四 14:00–18:00<br/>缓冲: +10 分钟"]
+        conflict["⚠️ 冲突: 与 海报修改 (周四 16:00–18:00) 重叠<br/>[ 解决 ] [ 忽略 ]"]
+        notion["Notion DB: ✓ 已连接 (排期数据库)<br/>[ 编辑 ] [ 导出到 Notion → ]"]
+    end
+
+    subgraph notiondb["Notion 日历数据库"]
+        table["日期 | 买家 | 任务 | 优先级 | 价格 | 状态<br/>6/5 | 张三 | Logo | 🔴 高 | ¥350 | 📋 已安排<br/>6/6 | 李四 | Poster | 🟡 中 | ¥200 | ⏳ 待定<br/>6/7 | 王五 | Avatar | 🟢 低 | ¥150 | ✅ 完成"]
+    end
+
+    xianyu -->|"点击悬浮球"| popup
+    popup -->|"导出"| notiondb
 ```
 
 ## Architecture
 
-```
-                            Browser Extension (Manifest V3)
-┌──────────────────────────────────────────────────────────────────────────┐
-│                                                                          │
-│  ┌─────────────────────┐    ┌──────────────────────┐                     │
-│  │    Content Script    │    │  Background Service   │                    │
-│  │  (xianyu pages)      │◄──►│  Worker               │                    │
-│  │                      │    │                       │                    │
-│  │  ● DOM scraper       │    │  ● AI client          │                    │
-│  │  ● Floating ball UI  │    │  ● Notion API client  │                    │
-│  │  ● Popup panel UI    │    │  ● Conflict detector  │                    │
-│  │  ● Event bus         │    │  ● Schedule optimizer │                    │
-│  │                      │    │  ● Storage manager    │                    │
-│  └─────────────────────┘    └──────────┬───────────┘                     │
-│                                        │                                  │
-│  ┌─────────────────────┐               │                                  │
-│  │   Popup / Options    │    ┌─────────▼──────────┐                     │
-│  │   Page               │    │  External APIs      │                    │
-│  │                       │    │                     │                    │
-│  │  ● Notion auth flow   │    │  ● OpenAI / Claude  │                    │
-│  │  ● API key settings   │    │  ● Notion API       │                    │
-│  │  ● Prompt templates   │    │  ● (optional) local │                    │
-│  │  ● Default schedule   │    │    LLM via Ollama   │                    │
-│  └─────────────────────┘    └─────────────────────┘                     │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph ext["Browser Extension (Manifest V3)"]
+        direction TB
+        subgraph cs["Content Script (Xianyu pages)"]
+            cs1["DOM Scraper"]
+            cs2["Floating Ball UI"]
+            cs3["Popup Panel UI"]
+            cs4["Event Bus"]
+        end
+        subgraph bg["Background Service Worker"]
+            bg1["AI Client"]
+            bg2["Notion API Client"]
+            bg3["Conflict Detector"]
+            bg4["Schedule Optimizer"]
+            bg5["Storage Manager"]
+        end
+        subgraph pop["Popup / Options Page"]
+            pop1["Notion Auth Flow"]
+            pop2["API Key Settings"]
+            pop3["Prompt Templates"]
+            pop4["Default Schedule"]
+        end
+        subgraph api["External APIs"]
+            api1["OpenAI / Claude"]
+            api2["Notion API"]
+            api3["(optional) Local LLM via Ollama"]
+        end
+        cs <---> bg
+        bg --> api
+    end
 ```
 
 ### Key Modules
@@ -112,31 +89,14 @@ This extension solves that by sitting **beside the Xianyu chat page**, extractin
 
 ### Data Flow
 
-```
-Chat DOM ──▶ DOM Scraper ──▶ Conversation Text
-                                    │
-                                    ▼
-                              AI Extractor (LLM)
-                                    │
-                                    ▼
-                   Structured Task JSON {buyer, req, urgency, price, hours}
-                                    │
-                          ┌─────────▼─────────┐
-                          │  Popup Panel       │
-                          │  (human reviews,   │
-                          │   edits fields)    │
-                          └─────────┬─────────┘
-                                    │
-                          ┌─────────▼─────────┐
-                          │  Conflict Detector │
-                          │  + Scheduler       │
-                          └─────────┬─────────┘
-                                    │
-                          ┌─────────▼─────────┐
-                          │  Notion Sync       │
-                          │  (create/update    │
-                          │   calendar entry)  │
-                          └───────────────────┘
+```mermaid
+flowchart TB
+    dom["Chat DOM"] --> scraper["DOM Scraper"] --> text["Conversation Text"]
+    text --> ai["AI Extractor (LLM)"]
+    ai --> json["Structured Task JSON<br/>{buyer, req, urgency, price, hours}"]
+    json --> popup["Popup Panel<br/>(human reviews, edits fields)"]
+    popup --> engine["Conflict Detector + Scheduler"]
+    engine --> notion["Notion Sync<br/>(create/update calendar entry)"]
 ```
 
 ## Notion Database Schema
