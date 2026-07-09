@@ -62,7 +62,7 @@ export async function extractTask(chatMessages: string): Promise<ExtractedTask> 
       return parseAIResponse(rawContent);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      if (lastError.message.includes('AI API error: 4')) {
+      if (lastError.message.includes('AI API error 4')) {
         // Don't retry 4xx errors (except 429 handled above)
         throw lastError;
       }
