@@ -265,13 +265,12 @@ pnpm install
 cp .env.example .env
 # Fill in: NOTION_TOKEN, OPENAI_API_KEY, NOTION_DATABASE_ID
 
-# Dev (watches + hot-reloads extension)
-pnpm dev
+# Build both browser targets
+pnpm build
 
-# Load in Chrome
-# 1. Go to chrome://extensions
-# 2. Enable "Developer mode"
-# 3. Click "Load unpacked" → select the `dist/` folder
+# Or build a single target
+pnpm build:chrome
+pnpm build:firefox
 
 # Test
 pnpm test          # unit tests
@@ -281,9 +280,39 @@ pnpm test:e2e      # end-to-end (requires Chrome)
 ### Build
 
 ```bash
-pnpm build          # production build → dist/
-pnpm build:zip      # zipped for Chrome Web Store submission
+pnpm build          # build both targets → dist/chrome + dist/firefox
+pnpm build:chrome   # build Chrome target only
+pnpm build:firefox  # build Firefox target only
+pnpm build:zip      # zip dist/chrome for Chrome Web Store submission
 ```
+
+### Debugging In Chrome
+
+1. Run `pnpm build:chrome` or `pnpm build`.
+2. Open `chrome://extensions`.
+3. Enable `Developer mode`.
+4. Click `Load unpacked`.
+5. Select `dist/chrome`.
+6. Open any page and inspect the page DevTools for content-script logs.
+7. Open the extension's service worker inspector from `chrome://extensions` for background logs.
+
+### Debugging In Firefox
+
+1. Run `pnpm build:firefox` or `pnpm build`.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click `Load Temporary Add-on...`.
+4. Select `dist/firefox/manifest.json`.
+5. Open any page and inspect the page DevTools for content-script logs.
+6. Use the extension's `Inspect` action in `about:debugging` for background logs.
+7. Re-run the build after code changes, then reload the temporary add-on.
+
+### Browser Target Notes
+
+- `dist/chrome` uses a Manifest V3 background service worker.
+- `dist/firefox` rewrites the same background entry into `background.scripts`, because Firefox uses document/event-page background scripts for this case.
+- Background logic must stay stateless across unloads. Persist anything durable in `storage.local`, not module globals.
+- The extension currently injects on `<all_urls>` for development debugging convenience. UI can appear on any page, but extraction only works on pages whose DOM matches the supported chat structure.
+- Broad `content_scripts` and `host_permissions` cause broad install prompts. Firefox shows these prompts for Manifest V3 host permissions from Firefox 127 onward; Chrome shows them in the install prompt as well.
 
 ## Roadmap
 
@@ -306,9 +335,9 @@ pnpm build:zip      # zipped for Chrome Web Store submission
 ## Privacy & Security
 
 - **All AI calls go directly from your browser** to the configured API endpoint. No third-party server sits in between.
-- **Notion token and API keys** are stored in Chrome's `storage.local` (encrypted at rest by the OS).
+- **Notion token and API keys** are stored in the extension's `storage.local` area.
 - **Chat content is processed ephemerally** — no conversation data is persisted beyond the current extraction session unless explicitly exported to Notion.
-- The extension only activates on `*.goofish.com` and `*.taobao.com` (Xianyu's parent domain).
+- The development build injects on `<all_urls>` so the floating widget can be debugged on any page. The scraper still depends on the target page exposing the expected chat DOM.
 
 ## Contributing
 

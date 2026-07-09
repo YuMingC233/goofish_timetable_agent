@@ -264,13 +264,12 @@ pnpm install
 cp .env.example .env
 # 填入：NOTION_TOKEN, OPENAI_API_KEY, NOTION_DATABASE_ID
 
-# 开发模式（监听 + 热重载扩展）
-pnpm dev
+# 构建两个浏览器目标
+pnpm build
 
-# 在 Chrome 中加载
-# 1. 打开 chrome://extensions
-# 2. 开启「开发者模式」
-# 3. 点击「加载已解压的扩展程序」→ 选择 dist/ 目录
+# 或只构建单一目标
+pnpm build:chrome
+pnpm build:firefox
 
 # 测试
 pnpm test          # 单元测试
@@ -280,9 +279,39 @@ pnpm test:e2e      # 端到端测试（需要 Chrome）
 ### 构建
 
 ```bash
-pnpm build          # 生产构建 → dist/
-pnpm build:zip      # 打包 zip 用于 Chrome Web Store 提交
+pnpm build          # 同时构建两个目标 → dist/chrome + dist/firefox
+pnpm build:chrome   # 只构建 Chrome 目标
+pnpm build:firefox  # 只构建 Firefox 目标
+pnpm build:zip      # 将 dist/chrome 打包为 Chrome Web Store 提交 zip
 ```
+
+### Chrome 调试
+
+1. 运行 `pnpm build:chrome` 或 `pnpm build`。
+2. 打开 `chrome://extensions`。
+3. 开启 `开发者模式`。
+4. 点击 `加载已解压的扩展程序`。
+5. 选择 `dist/chrome`。
+6. 页面侧日志看当前网页的开发者工具。
+7. 后台日志在 `chrome://extensions` 里打开该扩展的 service worker 检查器。
+
+### Firefox 调试
+
+1. 运行 `pnpm build:firefox` 或 `pnpm build`。
+2. 打开 `about:debugging#/runtime/this-firefox`。
+3. 点击 `Load Temporary Add-on...`。
+4. 选择 `dist/firefox/manifest.json`。
+5. 页面侧日志看当前网页的开发者工具。
+6. 后台日志在 `about:debugging` 中点击该扩展的 `Inspect`。
+7. 代码修改后重新构建，再对临时附加组件执行 reload。
+
+### 浏览器目标说明
+
+- `dist/chrome` 使用 Manifest V3 的 background service worker。
+- `dist/firefox` 会把同一份后台入口改写为 `background.scripts`，因为 Firefox 在这个场景下仍使用 document/event-page 形式的后台脚本。
+- 后台逻辑不能依赖长期常驻的内存状态。需要持久化的数据应放到 `storage.local`，不要只放在模块级变量里。
+- 当前扩展为了便于开发调试，使用 `<all_urls>` 注入内容脚本。因此任意页面都可能看到控件，但只有 DOM 结构符合预期聊天页面时，抓取/分析才会真正工作。
+- 由于 `content_scripts` 和 `host_permissions` 比较宽，安装提示也会更宽。Firefox 从 127 起会在 MV3 安装提示中显示这些 host 权限，Chrome 也会在安装提示中显示。
 
 ## 路线图
 
@@ -305,9 +334,9 @@ pnpm build:zip      # 打包 zip 用于 Chrome Web Store 提交
 ## 隐私与安全
 
 - **所有 AI 调用直接从你的浏览器发出**，直达配置的 API 端点。中间没有任何第三方服务器中转。
-- **Notion Token 和 API Key** 存储在 Chrome `storage.local` 中（由操作系统层面加密）。
+- **Notion Token 和 API Key** 存储在扩展的 `storage.local` 中。
 - **聊天内容仅即时处理**——除非用户主动导出到 Notion，否则不持久化任何对话数据。
-- 本扩展仅在 `*.goofish.com` 和 `*.taobao.com`（闲鱼所属域）下激活。
+- 当前开发构建会注入到 `<all_urls>`，方便在任意页面调试悬浮控件；但抓取器仍依赖目标页面具备预期的聊天 DOM。
 
 ## 参与贡献
 
