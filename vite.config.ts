@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      outDir: '.dist-base',
       rollupOptions: {
         input: {
           popup: resolve(__dirname, 'src/popup/index.html'),

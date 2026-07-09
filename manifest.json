@@ -14,12 +14,13 @@
     "default_title": "__MSG_appActionTitle__"
   },
   "background": {
+    "scripts": ["src/background/index.ts"],
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["*://*.goofish.com/*", "*://*.taobao.com/*"],
+      "matches": ["<all_urls>"],
       "js": ["src/content/index.ts"],
       "run_at": "document_idle"
     }
